@@ -647,20 +647,42 @@ $('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();});
    request logs and referrer headers on the way. */
 const LINK_FIELDS={n:'f-name',t:'f-title',p:'f-phone',e:'f-email',c:'f-company',w:'f-site',h:'f-hosted'};
 
+/* Forget the previous person entirely: a leftover crop or hosted address would
+   otherwise ride along and put one person's face on another's signature. */
+function clearPhoto(){
+  photoData=''; srcImg=null;
+  $('croprow').hidden=true; $('btn-uri').hidden=true;
+  try{ $('f-file').value=''; }catch(e){}
+  $('imgout').innerHTML=''; $('sizenote').innerHTML='';
+  pubStatus(null);
+}
+
 function applyPrefill(){
   const raw=location.hash.replace(/^#/,'');
   if(!raw) return false;
   let q; try{ q=new URLSearchParams(raw); }catch(e){ return false; }
+
+  /* Does this link describe anybody? Only then do we take it over the page. */
   let filled=0;
+  for(const key of Object.keys(LINK_FIELDS)) if(q.has(key)) filled++;
+  if(!filled) return false;
+
+  /* A link is a COMPLETE description of one person. Whatever it leaves out has
+     to be blanked, not inherited — otherwise opening Tracy's link after James's
+     leaves his photo attached to her name. */
   for(const [key,id] of Object.entries(LINK_FIELDS)){
-    if(!q.has(key)) continue;
     const el=$(id); if(!el) continue;
-    const val=q.get(key);
     if(el.tagName==='SELECT'){
-      if([...el.options].some(o=>o.value===val)){ el.value=val; filled++; }
-    }else{ el.value=val; filled++; }
+      const val=q.get(key);
+      if(q.has(key) && [...el.options].some(o=>o.value===val)) el.value=val;
+      continue;                       /* no blank option, so leave the default */
+    }
+    el.value = q.has(key) ? q.get(key) : '';
   }
-  return filled>0;
+
+  clearPhoto();
+  filenameTouched=false;              /* let the filename track the new name */
+  return true;
 }
 
 function buildLink(){
