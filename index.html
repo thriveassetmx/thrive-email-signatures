@@ -173,15 +173,38 @@ ol.steps b{color:var(--ink);font-weight:600}
         </div>
 
         <div>
-          <label for="f-hosted">Hosted photo URL <span style="font-weight:500;color:var(--ink-3)">— recommended</span></label>
-          <input id="f-hosted" type="url" placeholder="https://…/headshot.png">
+          <label for="f-hosted">Hosted photo URL <span style="font-weight:500;color:var(--ink-3)">— filled in by step 4</span></label>
+          <input id="f-hosted" type="url" placeholder="Publish in step 4, or paste an address here">
           <div class="hint">If set, this replaces the embedded copy and the HTML gets much smaller.<br>Team photos live in <b>people/</b> of the <code style="font-family:var(--mono);font-size:11px">thrive-email-signatures</code> repo. Once yours is committed there, its address is:<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all" id="urlpattern">https://thriveassetmx.github.io/thrive-email-signatures/people/your-name.png</code></div>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <header><div class="step">4</div><h2>Add it in Outlook</h2></header>
+      <header><div class="step">4</div><h2>Publish photo to the repo</h2></header>
+      <div class="body">
+        <div class="note warn"><span class="ic">!</span><div>This page is public, so it holds <b>no</b> credentials of its own. To upload, sign in with your own GitHub token — it is kept in this browser and sent only to api.github.com.</div></div>
+        <div>
+          <label for="f-token">GitHub token</label>
+          <input id="f-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+          <div class="hint">A fine-grained token with <b>Contents: Read and write</b> on <b>thrive-email-signatures</b> and nothing else.
+            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent)">Create one →</a></div>
+        </div>
+        <div>
+          <label for="f-filename">Saves as</label>
+          <input id="f-filename" type="text" placeholder="firstname-lastname-square.png">
+          <div class="hint">Committed to <b>people/</b> in the repo.</div>
+        </div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+          <button class="primary" id="btn-publish" disabled>Crop, upload &amp; use</button>
+          <button id="btn-forget" hidden>Forget token</button>
+        </div>
+        <div id="pubstatus"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><div class="step">5</div><h2>Add it in Outlook</h2></header>
       <div class="body">
         <ol class="steps">
           <li><b>Outlook (Windows):</b> File → Options → Mail → Signatures</li>
@@ -282,7 +305,7 @@ function loadFile(file){
       srcImg=im;
       $('f-crop').value = im.naturalHeight>=im.naturalWidth ? 0 : 50; /* portrait: keep the head. landscape: centre. */
       $('croprow').hidden=false; $('btn-uri').hidden=false;
-      drawCrop();
+      drawCrop(); syncPublishBtn();
     };
     im.src=e.target.result;
   };
@@ -428,12 +451,119 @@ $('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
 $('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
 
 const PEOPLE_BASE='https://thriveassetmx.github.io/thrive-email-signatures/people/';
+const REPO='thriveassetmx/thrive-email-signatures';
+const TOKEN_KEY='thrive-sig-token';
+
+function slugify(v){
+  return String(v).trim().toLowerCase()
+    .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+}
+function defaultFilename(){ return (slugify($('f-name').value)||'headshot')+'-square.png'; }
+
+/* The filename tracks the name until someone edits it by hand. */
+let filenameTouched=false;
+$('f-filename').addEventListener('input',()=>{filenameTouched=true;syncPublishBtn();});
+function syncFilename(){ if(!filenameTouched) $('f-filename').value=defaultFilename(); }
+
+function pubStatus(kind,html){
+  const box=$('pubstatus');
+  if(!kind){ box.innerHTML=''; return; }
+  const cls = kind==='err' ? 'warn' : kind==='ok' ? 'good' : 'warn';
+  const ic  = kind==='err' ? '!' : kind==='ok' ? '✓' : '…';
+  box.innerHTML='<div class="note '+cls+'"><span class="ic">'+ic+'</span><div>'+html+'</div></div>';
+}
+function syncPublishBtn(){
+  $('btn-publish').disabled = !(photoData && $('f-token').value.trim() && $('f-filename').value.trim());
+}
+$('f-token').addEventListener('input',()=>{syncPublishBtn();});
+
+/* restore a token saved on this device */
+try{
+  const t=localStorage.getItem(TOKEN_KEY);
+  if(t){ $('f-token').value=t; $('btn-forget').hidden=false; }
+}catch(e){}
+$('btn-forget').addEventListener('click',()=>{
+  try{localStorage.removeItem(TOKEN_KEY);}catch(e){}
+  $('f-token').value=''; $('btn-forget').hidden=true; syncPublishBtn();
+  pubStatus('ok','Token removed from this browser.');
+});
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function publish(){
+  const token=$('f-token').value.trim();
+  const file=$('f-filename').value.trim().replace(/^people\//,'');
+  if(!photoData||!token||!file) return;
+  if(!/\.png$/i.test(file)){ pubStatus('err','The filename needs to end in <b>.png</b> — the crop is exported as a PNG.'); return; }
+
+  const btn=$('btn-publish'); btn.disabled=true; const label=btn.textContent; btn.textContent='Uploading…';
+  const path='people/'+file;
+  const api='https://api.github.com/repos/'+REPO+'/contents/'+path;
+  const headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+
+  try{
+    pubStatus('wait','Uploading <b>'+path+'</b> to the repo…');
+
+    /* An existing file needs its blob sha, or GitHub rejects the overwrite. */
+    let sha=null;
+    const probe=await fetch(api,{headers});
+    if(probe.status===200){ sha=(await probe.json()).sha; }
+    else if(probe.status===401){ throw new Error('AUTH'); }
+    else if(probe.status===403){ throw new Error('PERM'); }
+
+    const body={message:'Add signature photo: '+file,content:photoData.split(',')[1]};
+    if(sha) body.sha=sha;
+    const put=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+
+    if(put.status===401) throw new Error('AUTH');
+    if(put.status===403) throw new Error('PERM');
+    if(put.status===404) throw new Error('NOTFOUND');
+    if(!put.ok){
+      let d={}; try{d=await put.json();}catch(_){}
+      throw new Error('GitHub said: '+(d.message||put.status));
+    }
+
+    try{ localStorage.setItem(TOKEN_KEY,token); $('btn-forget').hidden=false; }catch(e){}
+
+    /* Committed is not the same as served — Pages has to rebuild first. */
+    const url=PEOPLE_BASE+file;
+    pubStatus('wait','Committed. Waiting for GitHub Pages to publish it — usually under a minute…');
+    let live=false;
+    for(let i=0;i<40;i++){
+      await sleep(3000);
+      try{
+        const head=await fetch(url+'?t='+Date.now(),{method:'HEAD',cache:'no-store'});
+        if(head.ok){ live=true; break; }
+      }catch(e){}
+      if(i===6) pubStatus('wait','Committed. Still waiting on the Pages build — this can take a couple of minutes on a first upload…');
+    }
+
+    $('f-hosted').value=url; filenameTouched=true; render();
+
+    if(live){
+      pubStatus('ok','Published and wired in. The signature HTML now loads the photo from<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all">'+url+'</code>');
+    }else{
+      pubStatus('wait','Committed to the repo, but Pages has not served it yet. The HTML already points at<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all">'+url+'</code><br>It will start working once the build finishes — check the repo\u2019s Actions tab if it stays blank.');
+    }
+  }catch(err){
+    const m=String(err.message||err);
+    if(m==='AUTH')          pubStatus('err','That token was rejected. Check it has not expired and was copied in full.');
+    else if(m==='PERM')     pubStatus('err','The token is valid but lacks write access. It needs <b>Contents: Read and write</b> on <b>'+REPO+'</b>.');
+    else if(m==='NOTFOUND') pubStatus('err','Repository not reachable with this token. A fine-grained token must list <b>'+REPO+'</b> under its repository access.');
+    else if(/Failed to fetch|NetworkError/i.test(m)) pubStatus('err','Could not reach api.github.com. Check the connection and try again.');
+    else                    pubStatus('err',m);
+  }finally{
+    btn.textContent=label; syncPublishBtn();
+  }
+}
+$('btn-publish').addEventListener('click',publish);
+
 function suggestUrl(){
   const slug=$('f-name').value.trim().toLowerCase()
     .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
   $('urlpattern').textContent = PEOPLE_BASE + (slug||'your-name') + '-square.png';
 }
-$('f-name').addEventListener('input',suggestUrl); suggestUrl();
+$('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();}); suggestUrl(); syncFilename();
 
 ['f-name','f-title','f-phone','f-email','f-site','f-hosted'].forEach(id=>$(id).addEventListener('input',render));
 sel.addEventListener('change',render);
