@@ -155,13 +155,9 @@ ol.steps b{color:var(--ink);font-weight:600}
         <div>
           <label for="f-company">Thrive company</label>
           <select id="f-company"></select>
-          <div class="hint">Pulls the logo straight from the brand book, sized to its own proportions.</div>
+          <div class="hint">Logo comes from the brand book, sized to its own proportions.</div>
         </div>
-        <div>
-          <label for="f-site">Website <span style="font-weight:500;color:var(--ink-3)">— optional</span></label>
-          <input id="f-site" autocomplete="off" type="url" placeholder="https://example.com">
-          <div class="hint">Makes the logo clickable. Leave blank for a plain logo.</div>
-        </div>
+        <div class="hint" id="sitenote" style="margin:0"></div>
       </div>
     </section>
 
@@ -176,12 +172,23 @@ ol.steps b{color:var(--ink);font-weight:600}
 
         <div class="croprow" id="croprow" hidden>
           <div class="cropthumb"><img id="cropimg" alt="Square crop preview"></div>
-          <div>
-            <label for="f-crop">Crop position</label>
-            <input id="f-crop" type="range" min="0" max="100" value="0">
-            <div class="hint" id="crophint">0% keeps the top of the frame — the safe default for a headshot, since it protects the head and trims the chest.</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div>
+              <label for="f-zoom">Zoom <span id="zoomval" style="font-weight:500;color:var(--ink-3)">100%</span></label>
+              <input id="f-zoom" type="range" min="100" max="260" value="100">
+            </div>
+            <div>
+              <label for="f-cropy">Up / down</label>
+              <input id="f-cropy" type="range" min="0" max="100" value="0">
+            </div>
+            <div id="cropxwrap">
+              <label for="f-cropx">Left / right</label>
+              <input id="f-cropx" type="range" min="0" max="100" value="50">
+            </div>
+            <button id="btn-cropreset" type="button" style="align-self:flex-start;padding:5px 11px;font-size:12px">Reset crop</button>
           </div>
         </div>
+        <div class="hint" id="crophint" style="margin:0"></div>
 
       </div>
     </section>
@@ -292,12 +299,15 @@ const ICON_GLOBE=BRAND+'/00-shared/icons/icon-globe-orange.png';
 
 /* Measured from the real logo files in the brand book — each lockup has its
    own proportions, so every logo is sized from its own aspect at 45px tall. */
+/* Alphabetical by name. The site is fixed per company rather than typed in, so
+   a signature cannot go out pointing at the wrong place. Every URL below was
+   checked to resolve. */
 const COMPANIES=[
-  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',      aspect:3.1056},
-  {id:'assets-mx',        name:'Thrive Assets MX',        slug:'assetmx',         aspect:2.8474},
-  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',       aspect:3.1037},
-  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx',   aspect:3.1056},
-  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',             aspect:3.3422}
+  {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       aspect:2.8474, site:'https://thriveassetmx.com'},
+  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     aspect:3.1037, site:'https://thrivecapitalmx.com'},
+  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           aspect:3.3422, site:'https://thriveassetmx.com'},
+  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', aspect:3.1056, site:'https://thriveassetmx.com'},
+  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    aspect:3.1056, site:'https://thrive.rent'}
 ];
 const logoUrl=c=>BRAND+'/companies/'+c.id+'/logo/png/'+c.slug+'-logo-full-color-lightbg.png';
 const LOGO_H=45;
@@ -309,7 +319,7 @@ let srcImg=null, photoData='', lastHtml='';
 /* ---------- company picker ---------- */
 const sel=$('f-company');
 COMPANIES.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
-sel.value='property-mx';
+sel.value='property-mx';   /* most common, though Asset sorts first */
 const company=()=>COMPANIES.find(c=>c.id===sel.value);
 
 /* ---------- phone -> tel: ---------- */
@@ -322,24 +332,45 @@ function telHref(raw){
 }
 
 /* ---------- square crop ---------- */
+/* The old single slider could only travel the difference between width and
+   height, so on a nearly square photo it moved almost nothing. Zoom shrinks the
+   square being cut, which both tightens the framing and creates real room to
+   pan in each direction. */
 function drawCrop(){
   if(!srcImg) return;
-  const w=srcImg.naturalWidth,h=srcImg.naturalHeight;
-  const s=Math.min(w,h), spare=Math.max(w,h)-s;
-  const pct=+$('f-crop').value/100;
-  const off=Math.round(spare*pct);
-  const sx=w>h?off:0, sy=h>w?off:0;
-  const c=document.createElement('canvas');c.width=404;c.height=404;
+  const w=srcImg.naturalWidth, h=srcImg.naturalHeight;
+  const zoom=+$('f-zoom').value/100;
+  const side=Math.max(16, Math.round(Math.min(w,h)/zoom));
+  const maxX=Math.max(0,w-side), maxY=Math.max(0,h-side);
+  const sx=Math.round(maxX*(+$('f-cropx').value/100));
+  const sy=Math.round(maxY*(+$('f-cropy').value/100));
+
+  const c=document.createElement('canvas'); c.width=404; c.height=404;
   const x=c.getContext('2d');
-  x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
-  x.drawImage(srcImg,sx,sy,s,s,0,0,404,404);
+  x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+  x.drawImage(srcImg,sx,sy,side,side,0,0,404,404);
   photoData=c.toDataURL('image/png');
   $('cropimg').src=photoData;
-  const vert=h>=w;
-  $('crophint').textContent = pct===0
-    ? (vert?'0% keeps the top of the frame — protects the head, trims the chest.':'0% keeps the left of the frame.')
-    : Math.round(pct*100)+'% '+(vert?'down from the top — raise this only if the photo has headroom to spare.':'across from the left.');
+
+  $('zoomval').textContent=Math.round(zoom*100)+'%';
+  /* Grey out a direction that genuinely cannot move at this zoom. */
+  $('f-cropx').disabled = maxX===0;
+  $('f-cropy').disabled = maxY===0;
+  $('cropxwrap').style.opacity = maxX===0?0.45:1;
+
+  const src=Math.round(side)+'px of '+w+'×'+h;
+  $('crophint').textContent = (maxY===0 && maxX===0)
+    ? 'This photo is already square — zoom in to crop tighter and to unlock the sliders.'
+    : 'Cutting a '+src+'. Zoom in for more room to move.';
   render();
+}
+function resetCrop(){
+  if(!srcImg) return;
+  const w=srcImg.naturalWidth,h=srcImg.naturalHeight;
+  $('f-zoom').value=100;
+  $('f-cropy').value = h>=w ? 0 : 50;   /* portrait: keep the head, cut the chest */
+  $('f-cropx').value = 50;
+  drawCrop();
 }
 function loadFile(file){
   if(!file||!file.type.startsWith('image/')) return;
@@ -348,9 +379,8 @@ function loadFile(file){
     const im=new Image();
     im.onload=()=>{
       srcImg=im;
-      $('f-crop').value = im.naturalHeight>=im.naturalWidth ? 0 : 50; /* portrait: keep the head. landscape: centre. */
       $('croprow').hidden=false; $('btn-uri').hidden=false;
-      drawCrop(); syncPublishBtn();
+      resetCrop(); syncPublishBtn();
     };
     im.src=e.target.result;
   };
@@ -369,21 +399,25 @@ function buildSig(photoSrc,photoPx){
   const title=esc($('f-title').value.trim());
   const phone=esc($('f-phone').value.trim());
   const email=esc($('f-email').value.trim());
-  const site=$('f-site').value.trim();
+  const site=c.site;
   const tel=telHref($('f-phone').value);
   const FD="'Gabarito','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
   const FB="'Manrope','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
 
+  /* Clients like Superhuman apply their own line-height to message bodies, which
+     stretches a signature that leaves spacing to the text. Every row therefore
+     carries an explicit height, and every line box is pinned with !important
+     plus mso-line-height-rule so Outlook and the rest land on the same numbers. */
   const row=(icon,inner,pad)=>
 `        <tr>
-          <td style="padding:0 0 ${pad}px 0;">
+          <td height="${28+pad}" style="height:${28+pad}px; padding:0 0 ${pad}px 0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               <tr>
                 <td width="28" valign="middle" style="width:28px; font-size:0; line-height:0;">
                   <img src="${icon}" width="28" height="28" alt="" style="display:block; width:28px; height:28px; border:0; outline:none;">
                 </td>
                 <td width="14" style="width:14px; font-size:0; line-height:0;">&nbsp;</td>
-                <td valign="middle" style="font-family:${FB}; font-size:16px; line-height:22px; color:#1A1A1A;">${inner}</td>
+                <td valign="middle" height="28" style="height:28px; font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${inner}</td>
               </tr>
             </table>
           </td>
@@ -403,17 +437,17 @@ function buildSig(photoSrc,photoPx){
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
   <tr>${photoCell}
     <td valign="top" style="padding:0;">
-      <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
+      <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0" height="${photoPx}" style="height:${photoPx}px; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
         <tr>
-          <td style="font-family:${FD}; font-size:21px; line-height:26px; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px; padding:0 0 4px 0;">${name}</td>
+          <td height="30" style="height:30px; font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px; padding:0 0 4px 0;">${name}</td>
         </tr>
         <tr>
-          <td style="font-family:${FB}; font-size:15px; line-height:21px; font-style:italic; color:#1A1A1A; padding:0 0 10px 0;">${title}</td>
+          <td height="31" style="height:31px; font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A; padding:0 0 10px 0;">${title}</td>
         </tr>
 ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:underline;">${phone}</a>`,4)}
 ${row(ICON_GLOBE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
         <tr>
-          <td style="padding:0; font-size:0; line-height:0;">${logoCell}</td>
+          <td height="${LOGO_H}" style="height:${LOGO_H}px; padding:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">${logoCell}</td>
         </tr>
       </table>
     </td>
@@ -448,6 +482,7 @@ function render(){
   $('code').textContent=html;
   const c=company();
   $('dims').textContent = (photoSrc?px+'×'+px+' photo · ':'') + Math.round(LOGO_H*c.aspect)+'×'+LOGO_H+' logo';
+  $('sitenote').innerHTML = 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.';
   $('btn-rich').disabled=$('btn-html').disabled=false;
 
   /* hosted vs embedded */
@@ -645,7 +680,7 @@ $('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();});
    Details ride in the hash, not the query string: browsers never transmit a
    fragment to the server, so names, phone numbers and addresses stay out of
    request logs and referrer headers on the way. */
-const LINK_FIELDS={n:'f-name',t:'f-title',p:'f-phone',e:'f-email',c:'f-company',w:'f-site',h:'f-hosted'};
+const LINK_FIELDS={n:'f-name',t:'f-title',p:'f-phone',e:'f-email',c:'f-company',h:'f-hosted'};
 
 /* Forget the previous person entirely: a leftover crop or hosted address would
    otherwise ride along and put one person's face on another's signature. */
@@ -704,9 +739,10 @@ function refreshLink(){
 }
 $('btn-link').addEventListener('click',()=>copyPlain(buildLink(),'Link copied — send it over'));
 
-['f-name','f-title','f-phone','f-email','f-site','f-hosted'].forEach(id=>$(id).addEventListener('input',()=>{render();refreshLink();}));
+['f-name','f-title','f-phone','f-email','f-hosted'].forEach(id=>$(id).addEventListener('input',()=>{render();refreshLink();}));
 sel.addEventListener('change',()=>{render();refreshLink();});
-$('f-crop').addEventListener('input',drawCrop);
+['f-zoom','f-cropx','f-cropy'].forEach(id=>$(id).addEventListener('input',drawCrop));
+$('btn-cropreset').addEventListener('click',resetCrop);
 
 /* Browsers restore previously typed form values on reload and on back/forward,
    and that restoration lands AFTER this script first runs — which would silently
