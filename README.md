@@ -6,6 +6,17 @@ Two things live here:
    <https://thriveassetmx.github.io/thrive-email-signatures/>
 2. **The headshots** — `people/`, which the generated signatures load from.
 
+## Sending someone a prefilled link
+
+Fill in a colleague's name, title, phone, email and company, then press
+**Copy prefilled link** and send it to them. The page opens with everything
+already entered — they add a photo, press **Copy signature**, and paste it into
+Outlook. Nothing to install, no account, no password.
+
+The details travel in the part of the address after `#`. Browsers never send a
+fragment to the server, so names, phone numbers and addresses stay out of
+request logs and referrer headers.
+
 ## How it works
 
 Open the builder, fill in name / title / phone / email, pick the company, and
