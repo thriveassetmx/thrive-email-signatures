@@ -3,42 +3,61 @@
 Two things live here:
 
 1. **The builder** — `index.html`, served at
-   <https://thriveassetmx.github.io/thrive-email-signatures/>.
-   Fill in name, title, phone, email, pick the company, drop in a photo, and it
-   hands back the signature HTML to paste into Outlook.
+   <https://thriveassetmx.github.io/thrive-email-signatures/>
+2. **The headshots** — `people/`, which the generated signatures load from.
 
-2. **The headshots** — `people/`. Every signature photo the team uses is
-   committed here and served from this repo.
+## How it works
 
-## Adding your photo
+Open the builder, fill in name / title / phone / email, pick the company, and
+drop in a photo. The tool then:
 
-1. Open the builder and upload your photo. It crops a square for you —
-   top-aligned by default, which protects the head and trims the chest.
-2. Right-click the square it shows you → **Save image as…**
-3. Commit it to `people/` as `firstname-lastname-square.png`.
-4. Paste the resulting address into **Hosted photo URL** in the builder:
+1. **Crops a square** — top-aligned by default, so the head is protected and
+   the chest is trimmed. A slider adjusts this if a photo has headroom to spare.
+2. **Exports at 404×404**, twice the display size, so it stays sharp on retina.
+3. **Commits it to `people/`** in this repo.
+4. **Points the signature HTML at that address**, once GitHub Pages has
+   published it.
 
-   ```
-   https://thriveassetmx.github.io/thrive-email-signatures/people/firstname-lastname-square.png
-   ```
+Then press **Copy signature** and paste into Outlook.
 
-Photos must be publicly reachable — mail clients fetch signature images over
-plain HTTP with no login, so a private repo will not work.
+## Why the upload asks for a token
 
-## Why hosted rather than embedded
+This page is public. A write token baked into it would let anyone on the
+internet commit to this repo, so the builder ships with no credentials of its
+own — you sign in with yours.
 
-Without a hosted URL the builder embeds the photo directly in the HTML. That
-pastes fine into Outlook, which stores the image alongside the signature, but
-Gmail and some webmail strip embedded images. A hosted URL renders everywhere
-and keeps the HTML small.
+Create a **fine-grained personal access token**:
+
+- <https://github.com/settings/personal-access-tokens/new>
+- Repository access → **Only select repositories** → `thrive-email-signatures`
+- Permissions → Repository permissions → **Contents: Read and write**
+- Nothing else.
+
+The token is kept in your browser's `localStorage` and sent only to
+`api.github.com`. **Forget token** clears it. It is never written into the page
+or committed here.
+
+If you would rather staff not handle tokens at all, the alternative is a small
+serverless function holding one secret, with the page calling that instead.
+That needs hosting outside GitHub Pages.
+
+## Doing it by hand instead
+
+The token step is optional. Without it, right-click the square crop the builder
+shows you → **Save image as…** → commit it to `people/` yourself → paste the
+address into **Hosted photo URL**.
+
+## Photos must be public
+
+Mail clients fetch signature images over plain HTTP with no login, so this repo
+is public and a private one would not work.
 
 ## Where the brand assets come from
 
 Logos and icons are pulled live from
-[`thrive-brand-book`](https://github.com/thriveassetmx/thrive-brand-book) —
-this repo never copies them, so a logo update there flows through on its own.
+[`thrive-brand-book`](https://github.com/thriveassetmx/thrive-brand-book), so a
+logo update there flows through on its own.
 
-All five company logos render at the **same 45px height**; the widths differ
+All five company logos render at the **same 45px height**; widths differ
 because each lockup has its own proportions (2.85:1 to 3.34:1). The source
-files are tightly trimmed with no padding, so equal height is equal
-*optical* height.
+files are tightly trimmed, so equal height is equal *optical* height.
