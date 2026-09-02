@@ -122,25 +122,29 @@ ol.steps b{color:var(--ink);font-weight:600}
 <div class="wrap">
   <!-- ══════════ LEFT: the form ══════════ -->
   <div>
+    <div id="prefill-banner" hidden style="margin-bottom:18px">
+      <div class="note good"><span class="ic">✓</span><div><b>Your details are filled in already.</b> Add a photo in step 3, then press <b>Copy signature</b> and paste it into Outlook.</div></div>
+    </div>
+
     <section class="card">
       <header><div class="step">1</div><h2>Person</h2></header>
       <div class="body">
         <div>
           <label for="f-name">Full name</label>
-          <input id="f-name" type="text" value="James C. Brewer II" placeholder="Jane A. Doe">
+          <input id="f-name" type="text" placeholder="Jane A. Doe">
         </div>
         <div>
           <label for="f-title">Job title</label>
-          <input id="f-title" type="text" value="President, Thrive Property Mx, LLC" placeholder="Director of Operations">
+          <input id="f-title" type="text" placeholder="Director of Operations">
         </div>
         <div>
           <label for="f-phone">Phone</label>
-          <input id="f-phone" type="tel" value="(414) 300-7208" placeholder="(414) 300-7208">
+          <input id="f-phone" type="tel" placeholder="(414) 300-7208">
           <div class="hint">Shown exactly as typed. The tap-to-call link is built from the digits.</div>
         </div>
         <div>
           <label for="f-email">Email</label>
-          <input id="f-email" type="email" value="james.brewer@thriveassetmx.com" placeholder="name@thriveassetmx.com">
+          <input id="f-email" type="email" placeholder="name@thriveassetmx.com">
         </div>
       </div>
     </section>
@@ -155,7 +159,7 @@ ol.steps b{color:var(--ink);font-weight:600}
         </div>
         <div>
           <label for="f-site">Website <span style="font-weight:500;color:var(--ink-3)">— optional</span></label>
-          <input id="f-site" type="url" value="https://thrivepropertymx.com" placeholder="https://example.com">
+          <input id="f-site" type="url" placeholder="https://example.com">
           <div class="hint">Makes the logo clickable. Leave blank for a plain logo.</div>
         </div>
       </div>
@@ -192,6 +196,19 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
         <div class="note good"><span class="ic">i</span><div><b>Use “Copy signature”</b> for the editor — it pastes the formatted block. “Copy HTML” is the raw source, for a template or an IT rollout.</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Send this to someone</h2></header>
+      <div class="body">
+        <div class="hint" style="margin:0">Fill in their details above, send them this link, and it opens with everything already entered — they only add their photo.</div>
+        <input id="f-link" type="text" readonly style="font-family:var(--mono);font-size:11px">
+        <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+          <button class="primary" id="btn-link">Copy prefilled link</button>
+          <span class="hint" id="linkhint" style="margin:0"></span>
+        </div>
+        <div class="hint" style="margin:0">Details ride in the part of the address after <code style="font-family:var(--mono);font-size:11px">#</code>, which browsers never send to the server — so nothing is logged on the way.</div>
       </div>
     </section>
 
@@ -619,10 +636,53 @@ function suggestUrl(){
     .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
   $('urlpattern').textContent = PEOPLE_BASE + (slug||'your-name') + '-square.png';
 }
-$('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();}); suggestUrl(); syncFilename();
+$('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();});
 
-['f-name','f-title','f-phone','f-email','f-site','f-hosted'].forEach(id=>$(id).addEventListener('input',render));
-sel.addEventListener('change',render);
+/* ── Prefilled links ─────────────────────────────────────────────────────
+   Details ride in the hash, not the query string: browsers never transmit a
+   fragment to the server, so names, phone numbers and addresses stay out of
+   request logs and referrer headers on the way. */
+const LINK_FIELDS={n:'f-name',t:'f-title',p:'f-phone',e:'f-email',c:'f-company',w:'f-site',h:'f-hosted'};
+
+function applyPrefill(){
+  const raw=location.hash.replace(/^#/,'');
+  if(!raw) return false;
+  let q; try{ q=new URLSearchParams(raw); }catch(e){ return false; }
+  let filled=0;
+  for(const [key,id] of Object.entries(LINK_FIELDS)){
+    if(!q.has(key)) continue;
+    const el=$(id); if(!el) continue;
+    const val=q.get(key);
+    if(el.tagName==='SELECT'){
+      if([...el.options].some(o=>o.value===val)){ el.value=val; filled++; }
+    }else{ el.value=val; filled++; }
+  }
+  return filled>0;
+}
+
+function buildLink(){
+  const q=new URLSearchParams();
+  for(const [key,id] of Object.entries(LINK_FIELDS)){
+    const el=$(id); if(!el) continue;
+    const v=el.value.trim();
+    if(v) q.set(key,v);
+  }
+  return location.origin+location.pathname+'#'+q.toString();
+}
+
+function refreshLink(){
+  const url=buildLink();
+  $('f-link').value=url;
+  const named=$('f-name').value.trim();
+  $('linkhint').textContent = named ? 'for '+named : 'fill in a name first';
+  $('btn-link').disabled = !named;
+}
+$('btn-link').addEventListener('click',()=>copyPlain(buildLink(),'Link copied — send it over'));
+
+['f-name','f-title','f-phone','f-email','f-site','f-hosted'].forEach(id=>$(id).addEventListener('input',()=>{render();refreshLink();}));
+sel.addEventListener('change',()=>{render();refreshLink();});
 $('f-crop').addEventListener('input',drawCrop);
-render();
+
+if(applyPrefill()) $('prefill-banner').hidden=false;
+suggestUrl(); syncFilename(); refreshLink(); render();
 </script>
