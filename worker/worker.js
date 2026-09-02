@@ -55,8 +55,13 @@ export default {
     try { body = await request.json(); } catch { return json(400, { error: 'Expected JSON.' }); }
     const { password, filename, contentBase64 } = body || {};
 
-    if (!(await sameSecret(password, env.UPLOAD_PASSWORD)))
+    if (!(await sameSecret(password, env.UPLOAD_PASSWORD))) {
+      /* A short shared password is only safe if guessing is slow. Stalling every
+         rejection makes an online brute force impractical (~1.5s per attempt),
+         and Cloudflare's own protections sit in front of this. */
+      await new Promise(r => setTimeout(r, 1500));
       return json(401, { error: 'Wrong password.' });
+    }
 
     if (!FILENAME_RE.test(String(filename || '')))
       return json(400, { error: 'Filename must look like firstname-lastname-square.png — lowercase letters, numbers and hyphens only.' });
