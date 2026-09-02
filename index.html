@@ -183,12 +183,18 @@ ol.steps b{color:var(--ink);font-weight:600}
     <section class="card">
       <header><div class="step">4</div><h2>Publish photo to the repo</h2></header>
       <div class="body">
-        <div class="note warn"><span class="ic">!</span><div>This page is public, so it holds <b>no</b> credentials of its own. To upload, sign in with your own GitHub token — it is kept in this browser and sent only to api.github.com.</div></div>
-        <div>
+        <div id="auth-pw" hidden>
+          <label for="f-password">Upload password</label>
+          <input id="f-password" type="password" placeholder="Ask whoever set this up" autocomplete="current-password" spellcheck="false">
+          <div class="hint">One shared password for the whole team. It is checked on the server — this page never holds the GitHub credentials.</div>
+        </div>
+        <div id="auth-token">
+          <div class="note warn" style="margin-bottom:14px"><span class="ic">!</span><div>This page is public, so it holds <b>no</b> credentials of its own. To upload, sign in with your own GitHub token — it is kept in this browser and sent only to api.github.com.<br><br>Prefer one shared password for everyone? Deploy the uploader in <b>worker/</b> and set its address at the top of this page.</div></div>
           <label for="f-token">GitHub token</label>
           <input id="f-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
           <div class="hint">A fine-grained token with <b>Contents: Read and write</b> on <b>thrive-email-signatures</b> and nothing else.
             <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent)">Create one →</a></div>
+        </div>
         </div>
         <div>
           <label for="f-filename">Saves as</label>
@@ -451,7 +457,13 @@ $('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
 $('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
 
 const PEOPLE_BASE='https://thriveassetmx.github.io/thrive-email-signatures/people/';
+/* ── Set this to your deployed Worker address to switch the whole team from
+   ── personal GitHub tokens to one shared password. Leave '' for token mode.
+   ── e.g. 'https://thrive-signature-upload.<your-subdomain>.workers.dev'   */
+const UPLOAD_ENDPOINT='';
+
 const REPO='thriveassetmx/thrive-email-signatures';
+const PW_MODE=Boolean(UPLOAD_ENDPOINT);
 const TOKEN_KEY='thrive-sig-token';
 
 function slugify(v){
@@ -472,14 +484,18 @@ function pubStatus(kind,html){
   const ic  = kind==='err' ? '!' : kind==='ok' ? '✓' : '…';
   box.innerHTML='<div class="note '+cls+'"><span class="ic">'+ic+'</span><div>'+html+'</div></div>';
 }
+function authValue(){ return PW_MODE ? $('f-password').value.trim() : $('f-token').value.trim(); }
 function syncPublishBtn(){
-  $('btn-publish').disabled = !(photoData && $('f-token').value.trim() && $('f-filename').value.trim());
+  $('btn-publish').disabled = !(photoData && authValue() && $('f-filename').value.trim());
 }
-$('f-token').addEventListener('input',()=>{syncPublishBtn();});
+$('auth-pw').hidden = !PW_MODE;
+$('auth-token').hidden = PW_MODE;
+$('f-token').addEventListener('input',syncPublishBtn);
+$('f-password').addEventListener('input',syncPublishBtn);
 
 /* restore a token saved on this device */
 try{
-  const t=localStorage.getItem(TOKEN_KEY);
+  const t=PW_MODE?null:localStorage.getItem(TOKEN_KEY);
   if(t){ $('f-token').value=t; $('btn-forget').hidden=false; }
 }catch(e){}
 $('btn-forget').addEventListener('click',()=>{
@@ -490,40 +506,57 @@ $('btn-forget').addEventListener('click',()=>{
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+/* Password mode: the Worker holds the GitHub credentials and does the commit. */
+async function publishViaWorker(file,secret){
+  const r=await fetch(UPLOAD_ENDPOINT,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({password:secret,filename:file,contentBase64:photoData.split(',')[1]})
+  });
+  let d={}; try{ d=await r.json(); }catch(_){}
+  if(r.status===401) throw new Error('PW');
+  if(!r.ok) throw new Error(d.error||('Upload failed ('+r.status+')'));
+  return d.url;
+}
+
 async function publish(){
-  const token=$('f-token').value.trim();
+  const secret=authValue();
   const file=$('f-filename').value.trim().replace(/^people\//,'');
-  if(!photoData||!token||!file) return;
+  if(!photoData||!secret||!file) return;
   if(!/\.png$/i.test(file)){ pubStatus('err','The filename needs to end in <b>.png</b> — the crop is exported as a PNG.'); return; }
 
   const btn=$('btn-publish'); btn.disabled=true; const label=btn.textContent; btn.textContent='Uploading…';
   const path='people/'+file;
-  const api='https://api.github.com/repos/'+REPO+'/contents/'+path;
-  const headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
 
   try{
     pubStatus('wait','Uploading <b>'+path+'</b> to the repo…');
 
-    /* An existing file needs its blob sha, or GitHub rejects the overwrite. */
-    let sha=null;
-    const probe=await fetch(api,{headers});
-    if(probe.status===200){ sha=(await probe.json()).sha; }
-    else if(probe.status===401){ throw new Error('AUTH'); }
-    else if(probe.status===403){ throw new Error('PERM'); }
+    if(PW_MODE){
+      await publishViaWorker(file,secret);
+    }else{
+      const api='https://api.github.com/repos/'+REPO+'/contents/'+path;
+      const headers={'Authorization':'Bearer '+secret,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
 
-    const body={message:'Add signature photo: '+file,content:photoData.split(',')[1]};
-    if(sha) body.sha=sha;
-    const put=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+      /* An existing file needs its blob sha, or GitHub rejects the overwrite. */
+      let sha=null;
+      const probe=await fetch(api,{headers});
+      if(probe.status===200){ sha=(await probe.json()).sha; }
+      else if(probe.status===401){ throw new Error('AUTH'); }
+      else if(probe.status===403){ throw new Error('PERM'); }
 
-    if(put.status===401) throw new Error('AUTH');
-    if(put.status===403) throw new Error('PERM');
-    if(put.status===404) throw new Error('NOTFOUND');
-    if(!put.ok){
-      let d={}; try{d=await put.json();}catch(_){}
-      throw new Error('GitHub said: '+(d.message||put.status));
+      const body={message:'Add signature photo: '+file,content:photoData.split(',')[1]};
+      if(sha) body.sha=sha;
+      const put=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+
+      if(put.status===401) throw new Error('AUTH');
+      if(put.status===403) throw new Error('PERM');
+      if(put.status===404) throw new Error('NOTFOUND');
+      if(!put.ok){
+        let d={}; try{d=await put.json();}catch(_){}
+        throw new Error('GitHub said: '+(d.message||put.status));
+      }
+      try{ localStorage.setItem(TOKEN_KEY,secret); $('btn-forget').hidden=false; }catch(e){}
     }
-
-    try{ localStorage.setItem(TOKEN_KEY,token); $('btn-forget').hidden=false; }catch(e){}
 
     /* Committed is not the same as served — Pages has to rebuild first. */
     const url=PEOPLE_BASE+file;
@@ -547,7 +580,8 @@ async function publish(){
     }
   }catch(err){
     const m=String(err.message||err);
-    if(m==='AUTH')          pubStatus('err','That token was rejected. Check it has not expired and was copied in full.');
+    if(m==='PW')            pubStatus('err','Wrong password. Check with whoever set up the uploader.');
+    else if(m==='AUTH')     pubStatus('err','That token was rejected. Check it has not expired and was copied in full.');
     else if(m==='PERM')     pubStatus('err','The token is valid but lacks write access. It needs <b>Contents: Read and write</b> on <b>'+REPO+'</b>.');
     else if(m==='NOTFOUND') pubStatus('err','Repository not reachable with this token. A fine-grained token must list <b>'+REPO+'</b> under its repository access.');
     else if(/Failed to fetch|NetworkError/i.test(m)) pubStatus('err','Could not reach api.github.com. Check the connection and try again.');
