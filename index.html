@@ -131,20 +131,20 @@ ol.steps b{color:var(--ink);font-weight:600}
       <div class="body">
         <div>
           <label for="f-name">Full name</label>
-          <input id="f-name" type="text" placeholder="Jane A. Doe">
+          <input id="f-name" autocomplete="off" type="text" placeholder="Jane A. Doe">
         </div>
         <div>
           <label for="f-title">Job title</label>
-          <input id="f-title" type="text" placeholder="Director of Operations">
+          <input id="f-title" autocomplete="off" type="text" placeholder="Director of Operations">
         </div>
         <div>
           <label for="f-phone">Phone</label>
-          <input id="f-phone" type="tel" placeholder="(414) 300-7208">
+          <input id="f-phone" autocomplete="off" type="tel" placeholder="(414) 300-7208">
           <div class="hint">Shown exactly as typed. The tap-to-call link is built from the digits.</div>
         </div>
         <div>
           <label for="f-email">Email</label>
-          <input id="f-email" type="email" placeholder="name@thriveassetmx.com">
+          <input id="f-email" autocomplete="off" type="email" placeholder="name@thriveassetmx.com">
         </div>
       </div>
     </section>
@@ -159,7 +159,7 @@ ol.steps b{color:var(--ink);font-weight:600}
         </div>
         <div>
           <label for="f-site">Website <span style="font-weight:500;color:var(--ink-3)">— optional</span></label>
-          <input id="f-site" type="url" placeholder="https://example.com">
+          <input id="f-site" autocomplete="off" type="url" placeholder="https://example.com">
           <div class="hint">Makes the logo clickable. Leave blank for a plain logo.</div>
         </div>
       </div>
@@ -229,7 +229,7 @@ ol.steps b{color:var(--ink);font-weight:600}
 
         <div>
           <label for="f-hosted">Hosted photo URL</label>
-          <input id="f-hosted" type="url" placeholder="https://…/people/your-name.png">
+          <input id="f-hosted" autocomplete="off" type="url" placeholder="https://…/people/your-name.png">
           <div class="hint">Once committed, your photo lives at:<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all" id="urlpattern">https://thriveassetmx.github.io/thrive-email-signatures/people/your-name.png</code></div>
         </div>
 
@@ -686,6 +686,16 @@ $('btn-link').addEventListener('click',()=>copyPlain(buildLink(),'Link copied �
 sel.addEventListener('change',()=>{render();refreshLink();});
 $('f-crop').addEventListener('input',drawCrop);
 
-if(applyPrefill()) $('prefill-banner').hidden=false;
-suggestUrl(); syncFilename(); refreshLink(); render();
+/* Browsers restore previously typed form values on reload and on back/forward,
+   and that restoration lands AFTER this script first runs — which would silently
+   overwrite a prefilled link with whatever the last person typed. Re-applying on
+   pageshow (which fires after both a normal load and a bfcache restore) makes the
+   link win, which is the whole point of sending one. */
+function initFromLink(){
+  if(applyPrefill()) $('prefill-banner').hidden=false;
+  suggestUrl(); syncFilename(); refreshLink(); render();
+}
+initFromLink();
+window.addEventListener('pageshow',initFromLink);
+window.addEventListener('hashchange',initFromLink);
 </script>
