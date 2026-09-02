@@ -98,6 +98,13 @@ pre{margin:0;min-width:0;max-width:100%;padding:15px 16px;background:var(--panel
 .saveimg{display:grid;grid-template-columns:76px minmax(0,1fr);gap:13px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
 .saveimg img{width:76px;height:76px;border:1px solid var(--line);border-radius:8px;background:#fff;display:block}
 
+details.card > summary{padding:13px 16px;background:var(--panel-2);cursor:pointer;font-family:var(--display);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+details.card > summary::-webkit-details-marker{display:none}
+details.card > summary::after{content:'+';font-size:15px;color:var(--ink-3)}
+details.card[open] > summary::after{content:'–'}
+details.card > summary span{font-family:var(--body);font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+details.card > summary:hover{color:var(--ink)}
+details.card[open] > summary{border-bottom:1px solid var(--line)}
 ol.steps{margin:0;padding-left:19px;display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink-2)}
 ol.steps b{color:var(--ink);font-weight:600}
 .kbd{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink)}
@@ -172,45 +179,11 @@ ol.steps b{color:var(--ink);font-weight:600}
           </div>
         </div>
 
-        <div>
-          <label for="f-hosted">Hosted photo URL <span style="font-weight:500;color:var(--ink-3)">— filled in by step 4</span></label>
-          <input id="f-hosted" type="url" placeholder="Publish in step 4, or paste an address here">
-          <div class="hint">If set, this replaces the embedded copy and the HTML gets much smaller.<br>Team photos live in <b>people/</b> of the <code style="font-family:var(--mono);font-size:11px">thrive-email-signatures</code> repo. Once yours is committed there, its address is:<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all" id="urlpattern">https://thriveassetmx.github.io/thrive-email-signatures/people/your-name.png</code></div>
-        </div>
       </div>
     </section>
 
     <section class="card">
-      <header><div class="step">4</div><h2>Publish photo to the repo</h2></header>
-      <div class="body">
-        <div id="auth-pw" hidden>
-          <label for="f-password">Upload password</label>
-          <input id="f-password" type="password" placeholder="Ask whoever set this up" autocomplete="current-password" spellcheck="false">
-          <div class="hint">One shared password for the whole team. It is checked on the server — this page never holds the GitHub credentials.</div>
-        </div>
-        <div id="auth-token">
-          <div class="note warn" style="margin-bottom:14px"><span class="ic">!</span><div>This page is public, so it holds <b>no</b> credentials of its own. To upload, sign in with your own GitHub token — it is kept in this browser and sent only to api.github.com.<br><br>Prefer one shared password for everyone? Deploy the uploader in <b>worker/</b> and set its address at the top of this page.</div></div>
-          <label for="f-token">GitHub token</label>
-          <input id="f-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
-          <div class="hint">A fine-grained token with <b>Contents: Read and write</b> on <b>thrive-email-signatures</b> and nothing else.
-            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent)">Create one →</a></div>
-        </div>
-        </div>
-        <div>
-          <label for="f-filename">Saves as</label>
-          <input id="f-filename" type="text" placeholder="firstname-lastname-square.png">
-          <div class="hint">Committed to <b>people/</b> in the repo.</div>
-        </div>
-        <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
-          <button class="primary" id="btn-publish" disabled>Crop, upload &amp; use</button>
-          <button id="btn-forget" hidden>Forget token</button>
-        </div>
-        <div id="pubstatus"></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><div class="step">5</div><h2>Add it in Outlook</h2></header>
+      <header><div class="step">4</div><h2>Add it in Outlook</h2></header>
       <div class="body">
         <ol class="steps">
           <li><b>Outlook (Windows):</b> File → Options → Mail → Signatures</li>
@@ -221,6 +194,55 @@ ol.steps b{color:var(--ink);font-weight:600}
         <div class="note good"><span class="ic">i</span><div><b>Use “Copy signature”</b> for the editor — it pastes the formatted block. “Copy HTML” is the raw source, for a template or an IT rollout.</div></div>
       </div>
     </section>
+
+    <details class="card" id="hostpanel">
+      <summary>Also need Gmail or webmail? <span>Optional</span></summary>
+      <div class="body">
+        <div class="note good"><span class="ic">i</span><div>Skip this for Outlook. Outlook keeps the photo with the signature, so nothing needs hosting. Gmail and other webmail strip embedded photos — only then does the photo need a web address.</div></div>
+
+        <div>
+          <div style="font-weight:600;margin-bottom:6px">Put the photo on the web — no tools required</div>
+          <ol class="steps" style="margin-bottom:4px">
+            <li>Right-click the square crop below the preview → <b>Save image as…</b></li>
+            <li>Open <a href="https://github.com/thriveassetmx/thrive-email-signatures/upload/main/people" target="_blank" rel="noopener" style="color:var(--accent)">the people folder</a> and drag the file in, then <b>Commit changes</b>.</li>
+            <li>Wait about a minute, then paste the address below.</li>
+          </ol>
+          <div class="hint">Needs a GitHub login with access to the repo. No token, no install.</div>
+        </div>
+
+        <div>
+          <label for="f-hosted">Hosted photo URL</label>
+          <input id="f-hosted" type="url" placeholder="https://…/people/your-name.png">
+          <div class="hint">Once committed, your photo lives at:<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all" id="urlpattern">https://thriveassetmx.github.io/thrive-email-signatures/people/your-name.png</code></div>
+        </div>
+
+        <details style="margin-top:2px">
+          <summary style="font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:0">Upload straight from this page instead</summary>
+          <div style="display:flex;flex-direction:column;gap:14px;padding-top:12px">
+            <div id="auth-pw" hidden>
+              <label for="f-password">Upload password</label>
+              <input id="f-password" type="password" placeholder="Ask whoever set this up" autocomplete="current-password" spellcheck="false">
+              <div class="hint">Checked on the server — this page never holds the GitHub credentials.</div>
+            </div>
+            <div id="auth-token">
+              <label for="f-token">GitHub token</label>
+              <input id="f-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+              <div class="hint">Fine-grained token, <b>Contents: Read and write</b> on <b>thrive-email-signatures</b> only. Kept in this browser, sent only to api.github.com.
+                <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent)">Create one →</a></div>
+            </div>
+            <div>
+              <label for="f-filename">Saves as</label>
+              <input id="f-filename" type="text" placeholder="firstname-lastname-square.png">
+            </div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+              <button class="primary" id="btn-publish" disabled>Crop, upload &amp; use</button>
+              <button id="btn-forget" hidden>Forget token</button>
+            </div>
+            <div id="pubstatus"></div>
+          </div>
+        </details>
+      </div>
+    </details>
   </div>
 
   <!-- ══════════ RIGHT: preview + output ══════════ -->
@@ -415,8 +437,8 @@ function render(){
   const usingData = photoSrc.startsWith('data:');
   const kb=Math.round(html.length/1024);
   if(usingData){
-    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note warn"><span class="ic">!</span><div><b>The photo is embedded in this HTML (~'+kb+' KB).</b> Pasting with <b>Copy signature</b> works in Outlook, which stores the image with the signature. But raw embedded HTML is stripped by Gmail and some webmail. For a signature that renders everywhere, save the square below, put it on a web address, and paste that into <b>Hosted photo URL</b>.</div></div></div>';
-    $('imgout').innerHTML='<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Right-click → <b>Save image as…</b>, then commit it to <b>people/</b> in the thrive-email-signatures repo.</div></div></div>';
+    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Ready for Outlook.</b> The photo travels inside the signature (~'+kb+' KB), so there is nothing to host and nothing to set up — press <b>Copy signature</b> and paste it in.<br><br>Gmail and other webmail strip embedded photos. If you need those too, open <b>Also need Gmail or webmail?</b> above.</div></div></div>';
+    $('imgout').innerHTML='<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Only needed for Gmail or webmail — right-click → <b>Save image as…</b></div></div></div>';
   }else{
     $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Using a hosted photo.</b> The HTML is '+kb+' KB and will render in every mail client.</div></div></div>';
     $('imgout').innerHTML = photoData ? '<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Right-click → <b>Save image as…</b> if you still need to upload it.</div></div></div>' : '';
