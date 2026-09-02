@@ -506,7 +506,11 @@ const PW_MODE=Boolean(UPLOAD_ENDPOINT);
 const TOKEN_KEY='thrive-sig-token';
 
 function slugify(v){
-  return String(v).trim().toLowerCase()
+  /* Fold accents to their base letters first, so María becomes maria and not
+     mara. NFD splits a letter from its accent; the range strips the accents. */
+  return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[\u2018\u2019\u02bc]/g,'')          /* curly apostrophes */
+    .trim().toLowerCase()
     .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
 }
 function defaultFilename(){ return (slugify($('f-name').value)||'headshot')+'-square.png'; }
@@ -632,8 +636,7 @@ async function publish(){
 $('btn-publish').addEventListener('click',publish);
 
 function suggestUrl(){
-  const slug=$('f-name').value.trim().toLowerCase()
-    .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  const slug=slugify($('f-name').value);
   $('urlpattern').textContent = PEOPLE_BASE + (slug||'your-name') + '-square.png';
 }
 $('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();});
