@@ -202,7 +202,7 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li><b>Outlook on the web / new Outlook:</b> Settings → Mail → Compose and reply</li>
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
-        <div class="note good"><span class="ic">i</span><div><b>Use “Copy signature”</b> for the editor — it pastes the formatted block. “Copy HTML” is the raw source, for a template or an IT rollout.</div></div>
+        <div class="note good"><span class="ic">i</span><div><b>Two builds, same signature.</b> <b>Copy for Outlook</b> pins every row to an exact height, which is what Word’s rendering engine wants. <b>Copy for Superhuman</b> states everything as inline CSS and lets the text column find its own height, so Superhuman’s paste filter cannot pull the block out of line. Use whichever matches the client you are pasting into. “Copy HTML” gives the raw source of whichever build is on screen.</div></div>
       </div>
     </section>
 
@@ -273,13 +273,14 @@ ol.steps b{color:var(--ink);font-weight:600}
   <div>
     <section class="previewpane">
       <header>
-        <h2>Live preview</h2>
+        <h2>Live preview <span id="variantTag" style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Outlook build</span></h2>
         <div class="dims" id="dims">—</div>
       </header>
       <div class="stage" id="stage"></div>
       <div class="stage-note">Shown on white, the way an email body renders. Preview uses the Gabarito/Manrope brand faces; mail clients can’t load webfonts, so they fall back to Century Gothic or Trebuchet — the signature is built to degrade to those.</div>
       <div class="actions">
-        <button class="primary" id="btn-rich">Copy signature</button>
+        <button class="primary" id="btn-rich">Copy for Outlook</button>
+        <button class="primary" id="btn-sh">Copy for Superhuman</button>
         <button id="btn-html">Copy HTML</button>
         <button id="btn-uri" hidden>Copy photo data URI</button>
       </div>
@@ -315,6 +316,7 @@ const LOGO_H=45;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 let srcImg=null, photoData='', lastHtml='';
+let sigVariant='outlook';   /* 'outlook' | 'superhuman' — see buildSig */
 
 /* ---------- company picker ---------- */
 const sel=$('f-company');
@@ -393,7 +395,8 @@ const drop=$('drop');
 drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
 
 /* ---------- build the signature markup ---------- */
-function buildSig(photoSrc,photoPx){
+function buildSig(photoSrc,photoPx,variant){
+  const SH = (variant||sigVariant)==='superhuman';
   const c=company(), lw=Math.round(LOGO_H*c.aspect);
   const name=esc($('f-name').value.trim());
   const title=esc($('f-title').value.trim());
@@ -404,20 +407,35 @@ function buildSig(photoSrc,photoPx){
   const FD="'Gabarito','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
   const FB="'Manrope','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
 
-  /* Clients like Superhuman apply their own line-height to message bodies, which
-     stretches a signature that leaves spacing to the text. Every row therefore
-     carries an explicit height, and every line box is pinned with !important
-     plus mso-line-height-rule so Outlook and the rest land on the same numbers. */
+  /* TWO VARIANTS, because the two targets fail in opposite directions.
+     Outlook renders with Word's engine, which honours legacy table attributes
+     and is happiest when every row is pinned to an exact height.
+     Superhuman's compose box is a Chromium contenteditable: pasting runs a
+     sanitiser that can drop bare HTML attributes and re-apply the browser's own
+     typography. Pinning the text column to the photo's height there is a trap —
+     if the sanitiser wins, the two columns disagree and the block visibly
+     drifts. So the Superhuman build states everything as inline CSS, zeroes
+     margins on every text run, and deliberately does NOT lock the text column
+     to the photo height, letting the row be as tall as its tallest cell. */
+  const tblReset = 'border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;'
+                 + (SH ? ' padding:0; margin:0;' : '');
+
+  /* In the Superhuman build every text run gets its own block with margins
+     zeroed, so nothing the sanitiser re-applies can add space around it. */
+  const txt=(inner,font,size,lh,extra)=> SH
+    ? `<div style="margin:0; padding:0; font-family:${font}; font-size:${size}px; line-height:${lh}px; color:#1A1A1A;${extra||''}">${inner}</div>`
+    : inner;
+
   const row=(icon,inner,pad)=>
 `        <tr>
-          <td height="${28+pad}" style="height:${28+pad}px; padding:0 0 ${pad}px 0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+          <td${SH?'':` height="${28+pad}"`} style="height:${28+pad}px; padding:0 0 ${pad}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${tblReset}">
               <tr>
-                <td width="28" valign="middle" style="width:28px; font-size:0; line-height:0;">
+                <td width="28" valign="middle" style="width:28px; padding:0; margin:0; font-size:0; line-height:0;">
                   <img src="${icon}" width="28" height="28" alt="" style="display:block; width:28px; height:28px; border:0; outline:none;">
                 </td>
-                <td width="14" style="width:14px; font-size:0; line-height:0;">&nbsp;</td>
-                <td valign="middle" height="28" style="height:28px; font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${inner}</td>
+                <td width="14" style="width:14px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>
+                <td valign="middle"${SH?'':' height="28"'} style="height:28px; padding:0; margin:0; font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${txt(inner,FB,16,22)}</td>
               </tr>
             </table>
           </td>
@@ -429,25 +447,30 @@ function buildSig(photoSrc,photoPx){
     : logoImg;
 
   const photoCell = photoSrc ? `
-    <td valign="top" width="${photoPx}" height="${photoPx}" style="width:${photoPx}px; height:${photoPx}px; padding:0; font-size:0; line-height:0;">
+    <td valign="top" width="${photoPx}"${SH?'':` height="${photoPx}"`} style="width:${photoPx}px; height:${photoPx}px; padding:0; margin:0; font-size:0; line-height:0; vertical-align:top;">
       <img src="${photoSrc}" width="${photoPx}" height="${photoPx}" alt="${name}" style="display:block; width:${photoPx}px; height:${photoPx}px; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;">
     </td>
-    <td width="34" style="width:34px; font-size:0; line-height:0;">&nbsp;</td>` : '';
+    <td width="34" style="width:34px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>` : '';
 
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
+  /* Outlook: lock the text column to the photo so both finish level.
+     Superhuman: leave it free, so a sanitised line-height cannot misalign it. */
+  const textTableSize = SH ? '' : ` height="${photoPx}"`;
+  const textTableStyle = SH ? tblReset : `height:${photoPx}px; ${tblReset}`;
+
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${tblReset}">
   <tr>${photoCell}
-    <td valign="top" style="padding:0;">
-      <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0" height="${photoPx}" style="height:${photoPx}px; border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
+    <td valign="top" style="padding:0; margin:0; vertical-align:top;">
+      <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0"${textTableSize} style="${textTableStyle}">
         <tr>
-          <td height="30" style="height:30px; font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px; padding:0 0 4px 0;">${name}</td>
+          <td${SH?'':' height="30"'} style="height:30px; padding:0 0 4px 0; margin:0; font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px;">${txt(name,FD,21,26,' font-weight:bold; letter-spacing:0.3px;')}</td>
         </tr>
         <tr>
-          <td height="31" style="height:31px; font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A; padding:0 0 10px 0;">${title}</td>
+          <td${SH?'':' height="31"'} style="height:31px; padding:0 0 10px 0; margin:0; font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A;">${txt(title,FB,15,21,' font-style:italic;')}</td>
         </tr>
 ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:underline;">${phone}</a>`,4)}
 ${row(ICON_GLOBE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
         <tr>
-          <td height="${LOGO_H}" style="height:${LOGO_H}px; padding:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">${logoCell}</td>
+          <td${SH?'':` height="${LOGO_H}"`} style="height:${LOGO_H}px; padding:0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">${logoCell}</td>
         </tr>
       </table>
     </td>
@@ -464,7 +487,7 @@ function render(){
   if(!photoSrc && !$('f-name').value.trim()){
     stage.innerHTML='<div class="empty">Add a photo and a name to see the signature.</div>';
     $('code').textContent='—'; $('dims').textContent='—';
-    $('btn-rich').disabled=$('btn-html').disabled=true;
+    $('btn-rich').disabled=$('btn-sh').disabled=$('btn-html').disabled=true;
     $('imgout').innerHTML=''; $('sizenote').innerHTML='';
     return;
   }
@@ -479,11 +502,12 @@ function render(){
 
   const html=buildSig(photoSrc,px);
   lastHtml=html;
+  $('variantTag').textContent = sigVariant==='superhuman' ? 'Superhuman build' : 'Outlook build';
   $('code').textContent=html;
   const c=company();
   $('dims').textContent = (photoSrc?px+'×'+px+' photo · ':'') + Math.round(LOGO_H*c.aspect)+'×'+LOGO_H+' logo';
   $('sitenote').innerHTML = 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.';
-  $('btn-rich').disabled=$('btn-html').disabled=false;
+  $('btn-rich').disabled=$('btn-sh').disabled=$('btn-html').disabled=false;
 
   /* hosted vs embedded */
   const usingData = photoSrc.startsWith('data:');
@@ -507,13 +531,13 @@ async function copyPlain(text,msg){
     ta.remove();
   }
 }
-async function copyRich(html){
+async function copyRich(html,label){
   try{
     await navigator.clipboard.write([new ClipboardItem({
       'text/html':new Blob([html],{type:'text/html'}),
       'text/plain':new Blob([html],{type:'text/plain'})
     })]);
-    toast('Signature copied — paste into Outlook');
+    toast(label||'Signature copied');
   }catch(e){
     const d=document.createElement('div');
     d.contentEditable='true';d.innerHTML=html;
@@ -521,12 +545,18 @@ async function copyRich(html){
     document.body.appendChild(d);
     const r=document.createRange();r.selectNodeContents(d);
     const s=getSelection();s.removeAllRanges();s.addRange(r);
-    try{document.execCommand('copy');toast('Signature copied — paste into Outlook');}
+    try{document.execCommand('copy');toast(label||'Signature copied');}
     catch(_){toast('Copy failed — use Copy HTML instead');}
     s.removeAllRanges();d.remove();
   }
 }
-$('btn-rich').addEventListener('click',()=>copyRich(lastHtml));
+function copyAs(variant,label){
+  sigVariant=variant;
+  render();                       /* preview + code pane follow the button */
+  copyRich(lastHtml,label);
+}
+$('btn-rich').addEventListener('click',()=>copyAs('outlook','Outlook build copied — paste into Outlook'));
+$('btn-sh').addEventListener('click',()=>copyAs('superhuman','Superhuman build copied — paste into Superhuman'));
 $('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
 $('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
 
