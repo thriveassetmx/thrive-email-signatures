@@ -310,7 +310,13 @@ const COMPANIES=[
   {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', aspect:3.1056, site:'https://thriveassetmx.com'},
   {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    aspect:3.1056, site:'https://thrivepropertymx.com'}
 ];
-const logoUrl=c=>BRAND+'/companies/'+c.id+'/logo/png/'+c.slug+'-logo-full-color-lightbg.png';
+/* -email.png is a pre-sized 3x-retina export (135px tall), not the brand book's
+   5000px master. Pointing the signature at the master and shrinking it with
+   width/height attributes alone is the same failure mode that broke the
+   Superhuman build: a client that drops the sizing reverts to native pixel
+   size. See thrive-brain Decisions/2026-09-18 - Fix Superhuman Signature
+   Drift for James Brewer. */
+const logoUrl=c=>BRAND+'/companies/'+c.id+'/logo/png/'+c.slug+'-logo-full-color-lightbg-email.png';
 const LOGO_H=45;
 
 const $=id=>document.getElementById(id);
