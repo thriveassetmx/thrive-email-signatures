@@ -69,6 +69,6 @@ Logos and icons are pulled live from
 [`thrive-brand-book`](https://github.com/thriveassetmx/thrive-brand-book), so a
 logo update there flows through on its own.
 
-All five company logos render at the **same 45px height**; widths differ
+All seven company logos render at the **same 45px height**; widths differ
 because each lockup has its own proportions (2.85:1 to 3.34:1). The source
 files are tightly trimmed, so equal height is equal *optical* height.
