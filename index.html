@@ -302,15 +302,16 @@ const ICON_GLOBE=BRAND+'/00-shared/icons/icon-globe-orange.png';
    own proportions, so every logo is sized from its own aspect at 45px tall. */
 /* Alphabetical by name. The site is fixed per company rather than typed in, so
    a signature cannot go out pointing at the wrong place. Every URL below was
-   checked to resolve. */
+   checked to resolve. An empty site means the logo is not linked at all
+   (Holdings and Ventures, per Tatiana 2026-09-29). */
 const COMPANIES=[
   {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       aspect:2.8474, site:'https://thriveassetmx.com'},
   {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     aspect:3.1037, site:'https://thrivecapitalmx.com'},
   {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           aspect:3.3422, site:'https://thrivecreative.exchange'},
-  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      aspect:2.8769, site:'https://thriveassetmx.com'},
+  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      aspect:2.8769, site:''},
   {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', aspect:3.1056, site:'https://thriveassetmx.com'},
   {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    aspect:3.1056, site:'https://thrivepropertymx.com'},
-  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      aspect:2.8703, site:'https://thriveassetmx.com'}
+  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      aspect:2.8703, site:''}
 ];
 /* -email.png is a pre-sized 3x-retina export (135px tall), not the brand book's
    5000px master. Pointing the signature at the master and shrinking it with
@@ -514,7 +515,9 @@ function render(){
   $('code').textContent=html;
   const c=company();
   $('dims').textContent = (photoSrc?px+'×'+px+' photo · ':'') + Math.round(LOGO_H*c.aspect)+'×'+LOGO_H+' logo';
-  $('sitenote').innerHTML = 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.';
+  $('sitenote').innerHTML = c.site
+    ? 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.'
+    : 'Logo is not linked for this company.';
   $('btn-rich').disabled=$('btn-sh').disabled=$('btn-html').disabled=false;
 
   /* hosted vs embedded */
