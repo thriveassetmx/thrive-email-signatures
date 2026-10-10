@@ -189,7 +189,7 @@ ol.steps b{color:var(--ink);font-weight:600}
       <div class="body">
         <label class="drop" id="drop" for="f-file">
           <strong>Drop a photo, or click to choose</strong>
-          <span>Cropped to a square automatically</span>
+          <span>Fit to a square automatically — nothing is cropped unless you zoom in</span>
         </label>
         <input type="file" id="f-file" accept="image/*">
 
@@ -373,14 +373,42 @@ function drawCrop(){
   if(!srcImg) return;
   const w=srcImg.naturalWidth, h=srcImg.naturalHeight;
   const zoom=+$('f-zoom').value/100;
+
+  const c=document.createElement('canvas'); c.width=404; c.height=404;
+  const x=c.getContext('2d');
+  x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+
+  /* Most people drop a photo and never touch Zoom or the position sliders —
+     this is the state they see. At the slider's resting value (100%), show
+     the WHOLE photo letterboxed on white rather than cropping it to fill the
+     square. A crop-to-fill default silently shaves off whatever doesn't fit —
+     the top of the head on a tightly-framed or non-square original — with
+     nobody having touched anything. Letterboxing guarantees nothing is ever
+     lost by default; dragging Zoom past 100% is an explicit choice to crop in,
+     and only then does the cover-crop below apply. */
+  if(zoom<=1){
+    x.fillStyle='#ffffff';
+    x.fillRect(0,0,404,404);
+    const scale=404/Math.max(w,h);
+    const dw=w*scale, dh=h*scale;
+    const ox=(404-dw)/2, oy=(404-dh)/2;
+    x.drawImage(srcImg,0,0,w,h,ox,oy,dw,dh);
+    photoData=c.toDataURL('image/png');
+    $('cropimg').src=photoData;
+
+    $('zoomval').textContent='100%';
+    $('f-cropx').disabled=true; $('f-cropy').disabled=true;
+    $('cropxwrap').style.opacity=0.45;
+    $('crophint').textContent='Showing the whole photo — nothing is cropped. Drag Zoom above 100% to crop in instead.';
+    render();
+    return;
+  }
+
   const side=Math.max(16, Math.round(Math.min(w,h)/zoom));
   const maxX=Math.max(0,w-side), maxY=Math.max(0,h-side);
   const sx=Math.round(maxX*(+$('f-cropx').value/100));
   const sy=Math.round(maxY*(+$('f-cropy').value/100));
 
-  const c=document.createElement('canvas'); c.width=404; c.height=404;
-  const x=c.getContext('2d');
-  x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
   x.drawImage(srcImg,sx,sy,side,side,0,0,404,404);
   photoData=c.toDataURL('image/png');
   $('cropimg').src=photoData;
