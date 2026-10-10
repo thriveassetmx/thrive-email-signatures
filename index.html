@@ -427,6 +427,13 @@ function buildSig(photoSrc,photoPx,variant){
     42+est($('f-phone').value.trim(),16,0.62),
     42+est($('f-email').value.trim(),16,0.62),
     lw);
+  /* The builder page sets *{box-sizing:border-box}, so the preview measures a
+     row's stated height as INCLUDING its padding, and sizes the photo to that
+     total. Word has no border-box: it treats height as content and ADDS the
+     padding, so every row grows and the logo drops below the photo. In the
+     New Outlook build state each height net of its own padding, so Word's
+     height+padding equals the preview's total. */
+  const h = (total,pad) => NO ? Math.max(0,total-pad) : total;
   const NW = NO ? ' nowrap' : '';                 /* cell attribute */
   const NWS = NO ? ' white-space:nowrap;' : '';   /* inline style   */
   const FD="'Gabarito','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
@@ -458,7 +465,7 @@ function buildSig(photoSrc,photoPx,variant){
   const rowTextCellWS = NO ? `width:${rowTextW}px; ` : '';
   const row=(icon,inner,pad)=>
 `        <tr>
-          <td${SH?'':` height="${28+pad}"`} style="height:${28+pad}px; padding:0 0 ${pad}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
+          <td${SH?'':` height="${h(28+pad,pad)}"`} style="height:${h(28+pad,pad)}px; padding:0 0 ${pad}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"${rowTableAttrs} style="${rowTableStyle}">
               <tr>
                 <td width="28" valign="middle" style="width:28px; padding:0; margin:0; font-size:0; line-height:0;">
@@ -494,10 +501,10 @@ function buildSig(photoSrc,photoPx,variant){
     <td valign="top"${textColW} style="${textColWS}padding:0; margin:0; vertical-align:top;">
       <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0"${textColW}${textTableSize} style="${textTableStyle}">
         <tr>
-          <td${NW}${SH?'':' height="30"'} style="height:30px; padding:0 0 4px 0; margin:0;${NWS} font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px;">${txt(name,FD,21,26,' font-weight:bold; letter-spacing:0.3px;')}</td>
+          <td${NW}${SH?'':` height="${h(30,4)}"`} style="height:${h(30,4)}px; padding:0 0 4px 0; margin:0;${NWS} font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px;">${txt(name,FD,21,26,' font-weight:bold; letter-spacing:0.3px;')}</td>
         </tr>
         <tr>
-          <td${NW}${SH?'':' height="31"'} style="height:31px; padding:0 0 10px 0; margin:0;${NWS} font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A;">${txt(title,FB,15,21,' font-style:italic;')}</td>
+          <td${NW}${SH?'':` height="${h(31,10)}"`} style="height:${h(31,10)}px; padding:0 0 10px 0; margin:0;${NWS} font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A;">${txt(title,FB,15,21,' font-style:italic;')}</td>
         </tr>
 ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:underline;">${phone}</a>`,4)}
 ${row(ICON_GLOBE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
