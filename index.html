@@ -451,16 +451,21 @@ function buildSig(photoSrc,photoPx,variant){
     ? `<div style="margin:0; padding:0; font-family:${font}; font-size:${size}px; line-height:${lh}px; color:#1A1A1A;${extra||''}">${inner}</div>`
     : inner;
 
+  const rowTextW = Math.max(60, textW-42);   /* total minus icon (28) and gutter (14) */
+  const rowTableAttrs = NO ? ` width="${textW}"` : '';
+  const rowTableStyle = NO ? `width:${textW}px; table-layout:fixed; ${tblReset}` : tblReset;
+  const rowTextCellW = NO ? ` width="${rowTextW}"` : '';
+  const rowTextCellWS = NO ? `width:${rowTextW}px; ` : '';
   const row=(icon,inner,pad)=>
 `        <tr>
           <td${SH?'':` height="${28+pad}"`} style="height:${28+pad}px; padding:0 0 ${pad}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${tblReset}">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"${rowTableAttrs} style="${rowTableStyle}">
               <tr>
                 <td width="28" valign="middle" style="width:28px; padding:0; margin:0; font-size:0; line-height:0;">
                   <img src="${icon}" width="28" height="28" alt="" style="display:block; width:28px; height:28px; border:0; outline:none;">
                 </td>
                 <td width="14" style="width:14px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>
-                <td valign="middle"${NW}${SH?'':' height="28"'} style="height:28px; padding:0; margin:0;${NWS} font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${txt(inner,FB,16,22)}</td>
+                <td valign="middle"${NW}${rowTextCellW}${SH?'':' height="28"'} style="height:28px; padding:0; margin:0;${rowTextCellWS}${NWS} font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${txt(inner,FB,16,22)}</td>
               </tr>
             </table>
           </td>
@@ -480,7 +485,7 @@ function buildSig(photoSrc,photoPx,variant){
   /* Outlook: lock the text column to the photo so both finish level.
      Superhuman: leave it free, so a sanitised line-height cannot misalign it. */
   const textTableSize = SH ? '' : ` height="${photoPx}"`;
-  const textTableStyle = SH ? tblReset : `${NO?`width:${textW}px; `:''}height:${photoPx}px; ${tblReset}`;
+  const textTableStyle = SH ? tblReset : `${NO?`width:${textW}px; table-layout:fixed; `:''}height:${photoPx}px; ${tblReset}`;
   const textColW = NO ? ` width="${textW}"` : '';
   const textColWS = NO ? `width:${textW}px; ` : '';
 
