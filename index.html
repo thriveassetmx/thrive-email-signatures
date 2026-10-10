@@ -202,7 +202,7 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li><b>Outlook on the web / new Outlook:</b> Settings → Mail → Compose and reply</li>
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
-        <div class="note good"><span class="ic">i</span><div><b>Two builds, same signature.</b> <b>Copy for Outlook</b> pins every row to an exact height, which is what Word’s rendering engine wants. <b>Copy for Superhuman</b> states everything as inline CSS and lets the text column find its own height, so Superhuman’s paste filter cannot pull the block out of line. Use whichever matches the client you are pasting into. <b>Copy for New Outlook</b> is the Outlook build with the text column locked to a fixed width, so the phone number and email cannot wrap when Outlook swaps in Century Gothic. “Copy HTML” gives the raw source of whichever build is on screen.</div></div>
+        <div class="note good"><span class="ic">i</span><div><b>Built for Outlook.</b> Every row is pinned to an exact height and the text column is locked to a fixed width, so Word cannot squeeze the block or wrap the phone number and email when it swaps in Century Gothic. “Copy HTML” gives the raw source of the same signature.</div></div>
       </div>
     </section>
 
@@ -279,9 +279,7 @@ ol.steps b{color:var(--ink);font-weight:600}
       <div class="stage" id="stage"></div>
       <div class="stage-note">Shown on white, the way an email body renders. Preview uses the Gabarito/Manrope brand faces; mail clients can’t load webfonts, so they fall back to Century Gothic or Trebuchet — the signature is built to degrade to those.</div>
       <div class="actions">
-        <button class="primary" id="btn-rich">Copy for Outlook</button>
-        <button class="primary" id="btn-sh">Copy for Superhuman</button>
-        <button class="primary" id="btn-new">Copy for New Outlook</button>
+        <button class="primary" id="btn-new">Copy for Outlook</button>
         <button id="btn-html">Copy HTML</button>
         <button id="btn-uri" hidden>Copy photo data URI</button>
       </div>
@@ -326,7 +324,7 @@ const LOGO_H=45;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 let srcImg=null, photoData='', lastHtml='';
-let sigVariant='outlook';   /* 'outlook' | 'superhuman' | 'newoutlook' — see buildSig */
+let sigVariant='newoutlook';   /* the build the button ships; 'outlook' and 'superhuman' kept in buildSig for reference */
 
 /* ---------- company picker ---------- */
 const sel=$('f-company');
@@ -463,9 +461,16 @@ function buildSig(photoSrc,photoPx,variant){
   const rowTableStyle = NO ? `width:${textW}px; table-layout:fixed; ${tblReset}` : tblReset;
   const rowTextCellW = NO ? ` width="${rowTextW}"` : '';
   const rowTextCellWS = NO ? `width:${rowTextW}px; ` : '';
+  /* The icon is exactly 28px and the row was pinned to exactly 28px of content,
+     so any rounding in Word's layout clipped the top of the glyph. Give the icon
+     2px of slack and take the same 2px out of the row's padding: the row's TOTAL
+     height is unchanged, so the logo still lands flush with the photo. */
+  const SLACK = 2;
+  const rowH   = (pad) => NO ? 28+SLACK      : 28+pad;
+  const rowPad = (pad) => NO ? pad-SLACK     : pad;
   const row=(icon,inner,pad)=>
 `        <tr>
-          <td${SH?'':` height="${h(28+pad,pad)}"`} style="height:${h(28+pad,pad)}px; padding:0 0 ${pad}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
+          <td${SH?'':` height="${rowH(pad)}"`} style="height:${rowH(pad)}px; padding:0 0 ${rowPad(pad)}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"${rowTableAttrs} style="${rowTableStyle}">
               <tr>
                 <td width="28" valign="middle" style="width:28px; padding:0; margin:0; font-size:0; line-height:0;">
@@ -526,7 +531,7 @@ function render(){
   if(!photoSrc && !$('f-name').value.trim()){
     stage.innerHTML='<div class="empty">Add a photo and a name to see the signature.</div>';
     $('code').textContent='—'; $('dims').textContent='—';
-    $('btn-rich').disabled=$('btn-sh').disabled=$('btn-new').disabled=$('btn-html').disabled=true;
+    $('btn-new').disabled=$('btn-html').disabled=true;
     $('imgout').innerHTML=''; $('sizenote').innerHTML='';
     return;
   }
@@ -541,14 +546,14 @@ function render(){
 
   const html=buildSig(photoSrc,px);
   lastHtml=html;
-  $('variantTag').textContent = sigVariant==='superhuman' ? 'Superhuman build' : sigVariant==='newoutlook' ? 'New Outlook build' : 'Outlook build';
+  $('variantTag').textContent = sigVariant==='superhuman' ? 'Superhuman build' : 'Outlook build';
   $('code').textContent=html;
   const c=company();
   $('dims').textContent = (photoSrc?px+'×'+px+' photo · ':'') + Math.round(LOGO_H*c.aspect)+'×'+LOGO_H+' logo';
   $('sitenote').innerHTML = c.site
     ? 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.'
     : 'Logo is not linked for this company.';
-  $('btn-rich').disabled=$('btn-sh').disabled=$('btn-new').disabled=$('btn-html').disabled=false;
+  $('btn-new').disabled=$('btn-html').disabled=false;
 
   /* hosted vs embedded */
   const usingData = photoSrc.startsWith('data:');
@@ -596,9 +601,7 @@ function copyAs(variant,label){
   render();                       /* preview + code pane follow the button */
   copyRich(lastHtml,label);
 }
-$('btn-rich').addEventListener('click',()=>copyAs('outlook','Outlook build copied — paste into Outlook'));
-$('btn-sh').addEventListener('click',()=>copyAs('superhuman','Superhuman build copied — paste into Superhuman'));
-$('btn-new').addEventListener('click',()=>copyAs('newoutlook','New Outlook build copied — paste into Outlook'));
+$('btn-new').addEventListener('click',()=>copyAs('newoutlook','Signature copied — paste into Outlook'));
 $('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
 $('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
 
