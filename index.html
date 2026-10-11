@@ -316,9 +316,13 @@ ol.steps b{color:var(--ink);font-weight:600}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-const BRAND='https://thriveassetmx.github.io/thrive-brand-book';
-const ICON_PHONE=BRAND+'/00-shared/icons/icon-phone-orange.png';
-const ICON_GLOBE=BRAND+'/00-shared/icons/icon-envelope-orange.png';
+/* Icons and logos are served from this repo's own assets/ folder (added via
+   GitHub's web upload) rather than thrive-brand-book's GitHub Pages, so a
+   generated signature never depends on that other site being reachable when
+   the recipient's mail client renders it. See thrive-brain Decisions/2026-10-11
+   - Serve signature images from thrive-email-signatures' own assets folder. */
+const ICON_PHONE='assets/phone.png';
+const ICON_ENVELOPE='assets/envelope.png';
 
 /* Measured from the real logo files in the brand book — each lockup has its
    own proportions, so every logo is sized from its own aspect at 45px tall. */
@@ -335,13 +339,13 @@ const COMPANIES=[
   {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    aspect:3.1056, site:'https://thrivepropertymx.com'},
   {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      aspect:2.8703, site:''}
 ];
-/* -email.png is a pre-sized 3x-retina export (135px tall), not the brand book's
-   5000px master. Pointing the signature at the master and shrinking it with
-   width/height attributes alone is the same failure mode that broke the
-   Superhuman build: a client that drops the sizing reverts to native pixel
-   size. See thrive-brain Decisions/2026-09-18 - Fix Superhuman Signature
-   Drift for James Brewer. */
-const logoUrl=c=>BRAND+'/companies/'+c.id+'/logo/png/'+c.slug+'-logo-full-color-lightbg-email.png';
+/* Each logo-<id>.png in assets/ is the same pre-sized 3x-retina export (135px
+   tall) the brand book publishes, not its 5000px master. Pointing the
+   signature at a master and shrinking it with width/height attributes alone
+   is the same failure mode that broke the Superhuman build: a client that
+   drops the sizing reverts to native pixel size. See thrive-brain
+   Decisions/2026-09-18 - Fix Superhuman Signature Drift for James Brewer. */
+const logoUrl=c=>'assets/logo-'+c.id+'.png';
 const LOGO_H=45;
 
 const $=id=>document.getElementById(id);
@@ -563,7 +567,7 @@ function buildSig(photoSrc,photoPx,variant){
           <td${NW}${SH?'':` height="${h(31,10)}"`} style="height:${h(31,10)}px; padding:0 0 10px 0; margin:0;${NWS} font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A;">${txt(title,FB,15,21,' font-style:italic;')}</td>
         </tr>
 ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:underline;">${phone}</a>`,4)}
-${row(ICON_GLOBE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
+${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
         <tr>
           <td${SH?'':` height="${LOGO_H}"`} style="height:${LOGO_H}px; padding:0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">${logoCell}</td>
         </tr>
