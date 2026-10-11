@@ -1,1 +1,885 @@
-PASTE_MARKER_WILL_BE_REPLACED
+<title>Thrive Signature Builder</title>
+<link rel="icon" href="https://thriveassetmx.github.io/thrive-brand-book/companies/assets-mx/favicon/assetmx-favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gabarito:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#FBFBFD; --panel:#FFFFFF; --panel-2:#F1F3F9; --line:#E1E5EF; --line-2:#CFD6E6;
+  --ink:#12141A; --ink-2:#5A6076; --ink-3:#858CA3;
+  --accent:#0049E9; --accent-soft:#E8EEFF; --on-accent:#FFFFFF;
+  --orange:#FD4100; --orange-soft:#FFEDE6;
+  --ok:#0B7A54; --ok-soft:#E2F5EC;
+  --radius:10px;
+  --display:'Gabarito','Century Gothic','Trebuchet MS',system-ui,sans-serif;
+  --body:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1015; --panel:#141821; --panel-2:#1B202B; --line:#262C3A; --line-2:#343C4E;
+    --ink:#E9ECF4; --ink-2:#98A0B5; --ink-3:#6E7689;
+    --accent:#4B7DFF; --accent-soft:#182545; --on-accent:#08101F;
+    --orange:#FF6A38; --orange-soft:#2E1710;
+    --ok:#4ED2A0; --ok-soft:#0F2A22;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1015; --panel:#141821; --panel-2:#1B202B; --line:#262C3A; --line-2:#343C4E;
+  --ink:#E9ECF4; --ink-2:#98A0B5; --ink-3:#6E7689;
+  --accent:#4B7DFF; --accent-soft:#182545; --on-accent:#08101F;
+  --orange:#FF6A38; --orange-soft:#2E1710;
+  --ok:#4ED2A0; --ok-soft:#0F2A22;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}          /* beats the display: values set below */
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* Shared Thrive site header — identical treatment across the brand book,
+   the quote builder and this page: always-black bar, wordmark left, nav right,
+   white caps going orange with a 2px underline on the page you are on. */
+.sitehead{background:#000;border-bottom:1px solid #1A1A1A}
+.shrow{max-width:1240px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;
+       justify-content:space-between;gap:12px 24px;flex-wrap:wrap;min-height:64px}
+.logo-img{height:40px;width:auto;display:block}
+.sitenav{display:flex;gap:2px;flex-wrap:wrap}
+.sitenav a{font:inherit;font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+           color:#fff;text-decoration:none;border-radius:6px;padding:11px 14px}
+.sitenav a:hover{color:#FD4100}
+.sitenav a[aria-current="page"]{color:#FD4100;box-shadow:inset 0 -2px 0 #FD4100;border-radius:0}
+.sitenav a:focus-visible{outline:2px solid #FD4100;outline-offset:2px}
+.pagehead{max-width:1240px;margin:0 auto;padding:26px 24px 0}
+.pagehead h1{font-size:30px;font-weight:800;letter-spacing:-.3px}
+.pagehead .sub{color:var(--ink-2);font-size:14.5px;margin:7px 0 0;max-width:64ch}
+@media (max-width:560px){.logo-img{height:32px}.sitenav a{padding:9px 10px;font-size:12px}.pagehead h1{font-size:24px}}
+
+.wrap{max-width:1240px;margin:0 auto;padding:18px 24px 24px;display:grid;grid-template-columns:minmax(340px,400px) minmax(0,1fr);gap:24px;align-items:start}
+.wrap > div{min-width:0}                  /* without this the code pane stretches the page */
+@media (max-width:940px){.wrap{grid-template-columns:minmax(0,1fr)}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.card + .card{margin-top:18px}
+.card > header{padding:13px 16px;border-bottom:1px solid var(--line);background:var(--panel-2);display:flex;align-items:center;gap:9px}
+.card > header h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2)}
+.step{width:19px;height:19px;flex:none;border-radius:5px;background:var(--accent);color:var(--on-accent);font-family:var(--display);font-size:11px;font-weight:700;display:grid;place-items:center}
+.card .body{padding:16px;display:flex;flex-direction:column;gap:14px}
+
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:5px;letter-spacing:.01em}
+input[type=text],input[type=email],input[type=tel],input[type=url],select{
+  width:100%;padding:9px 11px;font-family:var(--body);font-size:14px;color:var(--ink);
+  background:var(--paper);border:1px solid var(--line-2);border-radius:8px}
+input::placeholder{color:var(--ink-3)}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);background-position:calc(100% - 17px) 51%,calc(100% - 12px) 51%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.hint{font-size:11.5px;color:var(--ink-3);margin-top:5px;line-height:1.45}
+
+.drop{border:1.5px dashed var(--line-2);border-radius:9px;padding:22px 16px;text-align:center;background:var(--paper);cursor:pointer;display:block}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{display:block;font-family:var(--display);font-size:14px;font-weight:700;color:var(--ink)}
+.drop span{font-size:11.5px;color:var(--ink-3)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+.croprow{display:grid;grid-template-columns:88px minmax(0,1fr);gap:14px;align-items:center}
+.cropthumb{width:88px;height:88px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.cropthumb img{display:block;width:100%;height:100%;object-fit:contain}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+.previewpane{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:sticky;top:24px}
+.previewpane > header{padding:13px 16px;border-bottom:1px solid var(--line);background:var(--panel-2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.previewpane > header h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2)}
+.dims{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.stage{background:#ffffff;padding:26px;overflow-x:auto;min-height:150px;display:flex;align-items:center}
+.stage-note{padding:8px 16px;font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--line);background:var(--panel)}
+.empty{color:#9aa0b0;font-family:var(--body);font-size:13px;border:1.5px dashed #dfe3ee;border-radius:8px;padding:26px;width:100%;text-align:center}
+
+.actions{display:flex;gap:9px;flex-wrap:wrap;padding:14px 16px;border-top:1px solid var(--line);background:var(--panel)}
+button{font-family:var(--body);font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button.primary:hover:not(:disabled){filter:brightness(1.08);color:var(--on-accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+.note{display:flex;gap:9px;padding:11px 13px;border-radius:8px;font-size:12.5px;line-height:1.5}
+.note.warn{background:var(--orange-soft);color:var(--ink)}
+.note.warn b{color:var(--orange)}
+.note.good{background:var(--ok-soft);color:var(--ink)}
+.note.good b{color:var(--ok)}
+.note .ic{font-family:var(--display);font-weight:800;flex:none}
+
+pre{margin:0;min-width:0;max-width:100%;padding:15px 16px;background:var(--panel-2);color:var(--ink);font-family:var(--mono);font-size:11.5px;line-height:1.6;max-height:300px;overflow:auto;white-space:pre;border-top:1px solid var(--line)}
+
+.saveimg{display:grid;grid-template-columns:76px minmax(0,1fr);gap:13px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
+.saveimg img{width:76px;height:76px;border:1px solid var(--line);border-radius:8px;background:#fff;display:block}
+
+details.card > summary{padding:13px 16px;background:var(--panel-2);cursor:pointer;font-family:var(--display);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+details.card > summary::-webkit-details-marker{display:none}
+details.card > summary::after{content:'+';font-size:15px;color:var(--ink-3)}
+details.card[open] > summary::after{content:'–'}
+details.card > summary span{font-family:var(--body);font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+details.card > summary:hover{color:var(--ink)}
+details.card[open] > summary{border-bottom:1px solid var(--line)}
+ol.steps{margin:0;padding-left:19px;display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink-2)}
+ol.steps b{color:var(--ink);font-weight:600}
+.kbd{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .18s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+
+<header class="sitehead">
+  <div class="shrow">
+    <img class="logo-img" src="https://thriveassetmx.github.io/thrive-brand-book/companies/assets-mx/logo/png/assetmx-logo-full-color-darkbg.png" alt="Thrive Asset MX">
+    <nav class="sitenav" aria-label="Tools">
+      <a href="https://thriveassetmx.github.io/thrive-brand-book/">Brand Book</a>
+      <a href="https://thriveassetmx.github.io/thrive-email-signatures/" aria-current="page">Signature Builder</a>
+    </nav>
+  </div>
+</header>
+
+<div class="pagehead">
+  <h1>Signature builder</h1>
+  <p class="sub">Fill in the details, pick the company, get the HTML for Outlook.</p>
+</div>
+
+<div class="wrap">
+  <!-- ══════════ LEFT: the form ══════════ -->
+  <div>
+    <div id="prefill-banner" hidden style="margin-bottom:18px">
+      <div class="note good"><span class="ic">✓</span><div><b>Your details are filled in already.</b> Add a photo in step 3, then press <b>Copy signature</b> and paste it into Outlook.</div></div>
+    </div>
+
+    <section class="card">
+      <header><div class="step">1</div><h2>Person</h2></header>
+      <div class="body">
+        <div>
+          <label for="f-name">Full name</label>
+          <input id="f-name" autocomplete="off" type="text" placeholder="Jane A. Doe">
+        </div>
+        <div>
+          <label for="f-title">Job title</label>
+          <input id="f-title" autocomplete="off" type="text" placeholder="Director of Operations">
+        </div>
+        <div>
+          <label for="f-phone">Phone</label>
+          <input id="f-phone" autocomplete="off" type="tel" placeholder="(414) 300-7208">
+          <div class="hint">Shown exactly as typed. The tap-to-call link is built from the digits.</div>
+        </div>
+        <div>
+          <label for="f-email">Email</label>
+          <input id="f-email" autocomplete="off" type="email" placeholder="name@thriveassetmx.com">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><div class="step">2</div><h2>Company</h2></header>
+      <div class="body">
+        <div>
+          <label for="f-company">Thrive company</label>
+          <select id="f-company"></select>
+          <div class="hint">Logo comes from the brand book, sized to its own proportions.</div>
+        </div>
+        <div class="hint" id="sitenote" style="margin:0"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><div class="step">3</div><h2>Photo</h2></header>
+      <div class="body">
+        <label class="drop" id="drop" for="f-file">
+          <strong>Drop a photo, or click to choose</strong>
+          <span>Fit to a square automatically — nothing is cropped unless you zoom in</span>
+        </label>
+        <input type="file" id="f-file" accept="image/*">
+
+        <div class="croprow" id="croprow" hidden>
+          <div class="cropthumb"><img id="cropimg" alt="Square crop preview" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div>
+              <label for="f-zoom">Zoom <span id="zoomval" style="font-weight:500;color:var(--ink-3)">100%</span></label>
+              <input id="f-zoom" type="range" min="100" max="260" value="100">
+            </div>
+            <div>
+              <label for="f-cropy">Up / down</label>
+              <input id="f-cropy" type="range" min="0" max="100" value="0">
+            </div>
+            <div id="cropxwrap">
+              <label for="f-cropx">Left / right</label>
+              <input id="f-cropx" type="range" min="0" max="100" value="50">
+            </div>
+            <button id="btn-cropreset" type="button" style="align-self:flex-start;padding:5px 11px;font-size:12px">Reset crop</button>
+          </div>
+        </div>
+        <div class="hint" id="crophint" style="margin:0"></div>
+
+      </div>
+    </section>
+
+    <section class="card">
+      <header><div class="step">4</div><h2>Add it in Outlook</h2></header>
+      <div class="body">
+        <ol class="steps">
+          <li><b>Outlook (Windows):</b> File → Options → Mail → Signatures</li>
+          <li><b>Outlook (Mac):</b> Outlook → Settings → Signatures</li>
+          <li><b>Outlook on the web / new Outlook:</b> Settings → Mail → Compose and reply</li>
+          <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
+        </ol>
+        <div class="note good"><span class="ic">i</span><div><b>Built for Outlook.</b> Every row is pinned to an exact height and the text column is locked to a fixed width, so Word cannot squeeze the block or wrap the phone number and email when it swaps in Century Gothic. “Copy HTML” gives the raw source of the same signature.</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Send this to someone</h2></header>
+      <div class="body">
+        <div class="hint" style="margin:0">Fill in their details above, send them this link, and it opens with everything already entered — they only add their photo.</div>
+        <input id="f-link" type="text" readonly style="font-family:var(--mono);font-size:11px">
+        <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+          <button class="primary" id="btn-link">Copy prefilled link</button>
+          <span class="hint" id="linkhint" style="margin:0"></span>
+        </div>
+        <div class="hint" style="margin:0">Details ride in the part of the address after <code style="font-family:var(--mono);font-size:11px">#</code>, which browsers never send to the server — so nothing is logged on the way.</div>
+      </div>
+    </section>
+
+    <details class="card" id="hostpanel">
+      <summary>Also need Gmail or webmail? <span>Optional</span></summary>
+      <div class="body">
+        <div class="note good"><span class="ic">i</span><div>Skip this for Outlook. Outlook keeps the photo with the signature, so nothing needs hosting. Gmail and other webmail strip embedded photos — only then does the photo need a web address.</div></div>
+
+        <div>
+          <div style="font-weight:600;margin-bottom:6px">Put the photo on the web — no tools required</div>
+          <ol class="steps" style="margin-bottom:4px">
+            <li>Right-click the square crop below the preview → <b>Save image as…</b></li>
+            <li>Open <a href="https://github.com/thriveassetmx/thrive-email-signatures/upload/main/people" target="_blank" rel="noopener" style="color:var(--accent)">the people folder</a> and drag the file in, then <b>Commit changes</b>.</li>
+            <li>Wait about a minute, then paste the address below.</li>
+          </ol>
+          <div class="hint">Needs a GitHub login with access to the repo. No token, no install.</div>
+        </div>
+
+        <div>
+          <label for="f-hosted">Hosted photo URL</label>
+          <input id="f-hosted" autocomplete="off" type="url" placeholder="https://…/people/your-name.png">
+          <div class="hint">Once committed, your photo lives at:<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all" id="urlpattern">https://thriveassetmx.github.io/thrive-email-signatures/people/your-name.png</code></div>
+        </div>
+
+        <details style="margin-top:2px">
+          <summary style="font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:0">Upload straight from this page instead</summary>
+          <div style="display:flex;flex-direction:column;gap:14px;padding-top:12px">
+            <div id="auth-pw" hidden>
+              <label for="f-password">Upload password</label>
+              <input id="f-password" type="password" placeholder="Ask whoever set this up" autocomplete="current-password" spellcheck="false">
+              <div class="hint">Checked on the server — this page never holds the GitHub credentials.</div>
+            </div>
+            <div id="auth-token">
+              <label for="f-token">GitHub token</label>
+              <input id="f-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+              <div class="hint">Fine-grained token, <b>Contents: Read and write</b> on <b>thrive-email-signatures</b> only. Kept in this browser, sent only to api.github.com.
+                <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent)">Create one →</a></div>
+            </div>
+            <div>
+              <label for="f-filename">Saves as</label>
+              <input id="f-filename" type="text" placeholder="firstname-lastname-square.png">
+            </div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+              <button class="primary" id="btn-publish" disabled>Crop, upload &amp; use</button>
+              <button id="btn-forget" hidden>Forget token</button>
+            </div>
+            <div id="pubstatus"></div>
+          </div>
+        </details>
+      </div>
+    </details>
+  </div>
+
+  <!-- ══════════ RIGHT: preview + output ══════════ -->
+  <div>
+    <section class="previewpane">
+      <header>
+        <h2>Live preview <span id="variantTag" style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Outlook build</span></h2>
+        <div class="dims" id="dims">—</div>
+      </header>
+      <div class="stage" id="stage"></div>
+      <div class="stage-note">Shown on white, the way an email body renders. Preview uses the Gabarito/Manrope brand faces; mail clients can’t load webfonts, so they fall back to Century Gothic or Trebuchet — the signature is built to degrade to those.</div>
+      <div class="actions">
+        <button class="primary" id="btn-new">Copy for Outlook</button>
+        <button id="btn-html">Copy HTML</button>
+        <button id="btn-uri" hidden>Copy photo data URI</button>
+      </div>
+      <div id="imgout"></div>
+      <div id="sizenote"></div>
+      <pre id="code">—</pre>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const BRAND='https://thriveassetmx.github.io/thrive-brand-book';
+const ICON_PHONE=BRAND+'/00-shared/icons/icon-phone-orange.png';
+const ICON_GLOBE=BRAND+'/00-shared/icons/icon-envelope-orange.png';
+
+/* Measured from the real logo files in the brand book — each lockup has its
+   own proportions, so every logo is sized from its own aspect at 45px tall. */
+/* Alphabetical by name. The site is fixed per company rather than typed in, so
+   a signature cannot go out pointing at the wrong place. Every URL below was
+   checked to resolve. An empty site means the logo is not linked at all
+   (Holdings and Ventures, per Tatiana 2026-09-29). */
+const COMPANIES=[
+  {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       aspect:2.8474, site:'https://thriveassetmx.com'},
+  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     aspect:3.1037, site:'https://thrivecapitalmx.com'},
+  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           aspect:3.3422, site:'https://thrivecreative.exchange'},
+  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      aspect:2.8769, site:''},
+  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', aspect:3.1056, site:'https://thriveassetmx.com'},
+  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    aspect:3.1056, site:'https://thrivepropertymx.com'},
+  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      aspect:2.8703, site:''}
+];
+/* -email.png is a pre-sized 3x-retina export (135px tall), not the brand book's
+   5000px master. Pointing the signature at the master and shrinking it with
+   width/height attributes alone is the same failure mode that broke the
+   Superhuman build: a client that drops the sizing reverts to native pixel
+   size. See thrive-brain Decisions/2026-09-18 - Fix Superhuman Signature
+   Drift for James Brewer. */
+const logoUrl=c=>BRAND+'/companies/'+c.id+'/logo/png/'+c.slug+'-logo-full-color-lightbg-email.png';
+const LOGO_H=45;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let srcImg=null, photoData='', lastHtml='';
+let sigVariant='newoutlook';   /* the build the button ships; 'outlook' and 'superhuman' kept in buildSig for reference */
+
+/* ---------- company picker ---------- */
+const sel=$('f-company');
+COMPANIES.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
+sel.value='property-mx';   /* most common, though Asset sorts first */
+const company=()=>COMPANIES.find(c=>c.id===sel.value);
+
+/* ---------- phone -> tel: ---------- */
+function telHref(raw){
+  const t=String(raw).trim();
+  if(t.startsWith('+')) return '+'+t.slice(1).replace(/\D/g,'');
+  const d=t.replace(/\D/g,'');
+  if(!d) return '';
+  return d.length===10 ? '+1'+d : '+'+d;
+}
+
+/* ---------- square crop ---------- */
+/* The old single slider could only travel the difference between width and
+   height, so on a nearly square photo it moved almost nothing. Zoom shrinks the
+   square being cut, which both tightens the framing and creates real room to
+   pan in each direction. */
+function drawCrop(){
+  if(!srcImg) return;
+  const w=srcImg.naturalWidth, h=srcImg.naturalHeight;
+  const zoom=+$('f-zoom').value/100;
+
+  const c=document.createElement('canvas'); c.width=404; c.height=404;
+  const x=c.getContext('2d');
+  x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+
+  /* Most people drop a photo and never touch Zoom or the position sliders —
+     this is the state they see. At the slider's resting value (100%), show
+     the WHOLE photo letterboxed on white rather than cropping it to fill the
+     square. A crop-to-fill default silently shaves off whatever doesn't fit —
+     the top of the head on a tightly-framed or non-square original — with
+     nobody having touched anything. Letterboxing guarantees nothing is ever
+     lost by default; dragging Zoom past 100% is an explicit choice to crop in,
+     and only then does the cover-crop below apply. */
+  if(zoom<=1){
+    x.fillStyle='#ffffff';
+    x.fillRect(0,0,404,404);
+    const scale=404/Math.max(w,h);
+    const dw=w*scale, dh=h*scale;
+    const ox=(404-dw)/2, oy=(404-dh)/2;
+    x.drawImage(srcImg,0,0,w,h,ox,oy,dw,dh);
+    photoData=c.toDataURL('image/png');
+    $('cropimg').src=photoData;
+
+    $('zoomval').textContent='100%';
+    $('f-cropx').disabled=true; $('f-cropy').disabled=true;
+    $('cropxwrap').style.opacity=0.45;
+    $('crophint').textContent='Showing the whole photo — nothing is cropped. Drag Zoom above 100% to crop in instead.';
+    render();
+    return;
+  }
+
+  const side=Math.max(16, Math.round(Math.min(w,h)/zoom));
+  const maxX=Math.max(0,w-side), maxY=Math.max(0,h-side);
+  const sx=Math.round(maxX*(+$('f-cropx').value/100));
+  const sy=Math.round(maxY*(+$('f-cropy').value/100));
+
+  x.drawImage(srcImg,sx,sy,side,side,0,0,404,404);
+  photoData=c.toDataURL('image/png');
+  $('cropimg').src=photoData;
+
+  $('zoomval').textContent=Math.round(zoom*100)+'%';
+  /* Grey out a direction that genuinely cannot move at this zoom. */
+  $('f-cropx').disabled = maxX===0;
+  $('f-cropy').disabled = maxY===0;
+  $('cropxwrap').style.opacity = maxX===0?0.45:1;
+
+  const src=Math.round(side)+'px of '+w+'×'+h;
+  $('crophint').textContent = (maxY===0 && maxX===0)
+    ? 'This photo is already square — zoom in to crop tighter and to unlock the sliders.'
+    : 'Cutting a '+src+'. Zoom in for more room to move.';
+  render();
+}
+function resetCrop(){
+  if(!srcImg) return;
+  const w=srcImg.naturalWidth,h=srcImg.naturalHeight;
+  $('f-zoom').value=100;
+  $('f-cropy').value = h>=w ? 0 : 50;   /* portrait: keep the head, cut the chest */
+  $('f-cropx').value = 50;
+  drawCrop();
+}
+function loadFile(file){
+  if(!file||!file.type.startsWith('image/')) return;
+  const fr=new FileReader();
+  fr.onload=e=>{
+    const im=new Image();
+    im.onload=()=>{
+      srcImg=im;
+      $('croprow').hidden=false; $('btn-uri').hidden=false;
+      resetCrop(); syncPublishBtn();
+    };
+    im.src=e.target.result;
+  };
+  fr.readAsDataURL(file);
+}
+$('f-file').addEventListener('change',e=>loadFile(e.target.files[0]));
+const drop=$('drop');
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+
+/* ---------- build the signature markup ---------- */
+function buildSig(photoSrc,photoPx,variant){
+  const SH = (variant||sigVariant)==='superhuman';
+  /* NEW OUTLOOK build = the Outlook build plus a locked text-column width and
+     no-wrap text cells. Mail clients fall back to Century Gothic, which runs
+     wider than Manrope; with no width set, Word squeezes the column and breaks
+     the phone number at a hyphen, throwing off the pinned row heights. The
+     original Outlook and Superhuman builds are left exactly as they were. */
+  const NO = (variant||sigVariant)==='newoutlook';
+  const c=company(), lw=Math.round(LOGO_H*c.aspect);
+  const name=esc($('f-name').value.trim());
+  const title=esc($('f-title').value.trim());
+  const phone=esc($('f-phone').value.trim());
+  const email=esc($('f-email').value.trim());
+  const site=c.site;
+  const tel=telHref($('f-phone').value);
+  const est=(v,px,k)=>Math.ceil((v||'').length*px*k);
+  const textW=Math.max(280,
+    est($('f-name').value.trim(),21,0.68),
+    est($('f-title').value.trim(),15,0.6),
+    42+est($('f-phone').value.trim(),16,0.62),
+    42+est($('f-email').value.trim(),16,0.62),
+    lw);
+  /* The builder page sets *{box-sizing:border-box}, so the preview measures a
+     row's stated height as INCLUDING its padding, and sizes the photo to that
+     total. Word has no border-box: it treats height as content and ADDS the
+     padding, so every row grows and the logo drops below the photo. In the
+     New Outlook build state each height net of its own padding, so Word's
+     height+padding equals the preview's total. */
+  const h = (total,pad) => NO ? Math.max(0,total-pad) : total;
+  const NW = NO ? ' nowrap' : '';                 /* cell attribute */
+  const NWS = NO ? ' white-space:nowrap;' : '';   /* inline style   */
+  const FD="'Gabarito','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
+  const FB="'Manrope','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
+
+  /* TWO VARIANTS, because the two targets fail in opposite directions.
+     Outlook renders with Word's engine, which honours legacy table attributes
+     and is happiest when every row is pinned to an exact height.
+     Superhuman's compose box is a Chromium contenteditable: pasting runs a
+     sanitiser that can drop bare HTML attributes and re-apply the browser's own
+     typography. Pinning the text column to the photo's height there is a trap —
+     if the sanitiser wins, the two columns disagree and the block visibly
+     drifts. So the Superhuman build states everything as inline CSS, zeroes
+     margins on every text run, and deliberately does NOT lock the text column
+     to the photo height, letting the row be as tall as its tallest cell. */
+  const tblReset = 'border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;'
+                 + (SH ? ' padding:0; margin:0;' : '');
+
+  /* In the Superhuman build every text run gets its own block with margins
+     zeroed, so nothing the sanitiser re-applies can add space around it. */
+  const txt=(inner,font,size,lh,extra)=> SH
+    ? `<div style="margin:0; padding:0; font-family:${font}; font-size:${size}px; line-height:${lh}px; color:#1A1A1A;${extra||''}">${inner}</div>`
+    : inner;
+
+  const rowTextW = Math.max(60, textW-42);   /* total minus icon (28) and gutter (14) */
+  const rowTableAttrs = NO ? ` width="${textW}"` : '';
+  const rowTableStyle = NO ? `width:${textW}px; table-layout:fixed; ${tblReset}` : tblReset;
+  const rowTextCellW = NO ? ` width="${rowTextW}"` : '';
+  const rowTextCellWS = NO ? `width:${rowTextW}px; ` : '';
+  /* The icon is exactly 28px and the row was pinned to exactly 28px of content,
+     so any rounding in Word's layout clipped the top of the glyph. Give the icon
+     2px of slack and take the same 2px out of the row's padding: the row's TOTAL
+     height is unchanged, so the logo still lands flush with the photo. */
+  const SLACK = 2;
+  const rowH   = (pad) => NO ? 28+SLACK      : 28+pad;
+  const rowPad = (pad) => NO ? pad-SLACK     : pad;
+  const row=(icon,inner,pad)=>
+`        <tr>
+          <td${SH?'':` height="${rowH(pad)}"`} style="height:${rowH(pad)}px; padding:0 0 ${rowPad(pad)}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"${rowTableAttrs} style="${rowTableStyle}">
+              <tr>
+                <td width="28" valign="middle" style="width:28px; padding:0; margin:0; font-size:0; line-height:0;">
+                  <img src="${icon}" width="28" height="28" alt="" style="display:block; width:28px; height:28px; border:0; outline:none;">
+                </td>
+                <td width="14" style="width:14px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>
+                <td valign="middle"${NW}${rowTextCellW}${SH?'':' height="28"'} style="height:28px; padding:0; margin:0;${rowTextCellWS}${NWS} font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${txt(inner,FB,16,22)}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+
+  const logoImg=`<img src="${logoUrl(c)}" width="${lw}" height="${LOGO_H}" alt="${esc(c.name)}" style="display:block; width:${lw}px; height:${LOGO_H}px; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;">`;
+  const logoCell = site
+    ? `<a href="${esc(site)}" target="_blank" style="text-decoration:none; border:0;">${logoImg}</a>`
+    : logoImg;
+
+  const photoCell = photoSrc ? `
+    <td valign="top" width="${photoPx}"${SH?'':` height="${photoPx}"`} style="width:${photoPx}px; height:${photoPx}px; padding:0; margin:0; font-size:0; line-height:0; vertical-align:top;">
+      <img src="${photoSrc}" width="${photoPx}" height="${photoPx}" alt="${name}" style="display:block; width:${photoPx}px; height:${photoPx}px; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;">
+    </td>
+    <td width="34" style="width:34px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>` : '';
+
+  /* Outlook: lock the text column to the photo so both finish level.
+     Superhuman: leave it free, so a sanitised line-height cannot misalign it. */
+  const textTableSize = SH ? '' : ` height="${photoPx}"`;
+  const textTableStyle = SH ? tblReset : `${NO?`width:${textW}px; table-layout:fixed; `:''}height:${photoPx}px; ${tblReset}`;
+  const textColW = NO ? ` width="${textW}"` : '';
+  const textColWS = NO ? `width:${textW}px; ` : '';
+
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${tblReset}">
+  <tr>${photoCell}
+    <td valign="top"${textColW} style="${textColWS}padding:0; margin:0; vertical-align:top;">
+      <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0"${textColW}${textTableSize} style="${textTableStyle}">
+        <tr>
+          <td${NW}${SH?'':` height="${h(30,4)}"`} style="height:${h(30,4)}px; padding:0 0 4px 0; margin:0;${NWS} font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px;">${txt(name,FD,21,26,' font-weight:bold; letter-spacing:0.3px;')}</td>
+        </tr>
+        <tr>
+          <td${NW}${SH?'':` height="${h(31,10)}"`} style="height:${h(31,10)}px; padding:0 0 10px 0; margin:0;${NWS} font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A;">${txt(title,FB,15,21,' font-style:italic;')}</td>
+        </tr>
+${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:underline;">${phone}</a>`,4)}
+${row(ICON_GLOBE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
+        <tr>
+          <td${SH?'':` height="${LOGO_H}"`} style="height:${LOGO_H}px; padding:0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">${logoCell}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+}
+
+/* ---------- render: measure the text column, match the photo to it ---------- */
+let pass=0;
+function render(){
+  const photoSrc=$('f-hosted').value.trim()||photoData;
+  const stage=$('stage');
+
+  if(!photoSrc && !$('f-name').value.trim()){
+    stage.innerHTML='<div class="empty">Add a photo and a name to see the signature.</div>';
+    $('code').textContent='—'; $('dims').textContent='—';
+    $('btn-new').disabled=$('btn-html').disabled=true;
+    $('imgout').innerHTML=''; $('sizenote').innerHTML='';
+    return;
+  }
+
+  /* First pass at a nominal size, then measure the real text height and
+     redraw the photo to match it exactly — so both columns finish level
+     even when a long name or address wraps. */
+  stage.innerHTML=buildSig(photoSrc,176);
+  const tt=stage.querySelector('#sig-text');
+  const px=tt?Math.round(tt.getBoundingClientRect().height):176;
+  stage.innerHTML=buildSig(photoSrc,px);
+
+  const html=buildSig(photoSrc,px);
+  lastHtml=html;
+  $('variantTag').textContent = sigVariant==='superhuman' ? 'Superhuman build' : 'Outlook build';
+  $('code').textContent=html;
+  const c=company();
+  $('dims').textContent = (photoSrc?px+'×'+px+' photo · ':'') + Math.round(LOGO_H*c.aspect)+'×'+LOGO_H+' logo';
+  $('sitenote').innerHTML = c.site
+    ? 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.'
+    : 'Logo is not linked for this company.';
+  $('btn-new').disabled=$('btn-html').disabled=false;
+
+  /* hosted vs embedded */
+  const usingData = photoSrc.startsWith('data:');
+  const kb=Math.round(html.length/1024);
+  if(usingData){
+    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Ready for Outlook.</b> The photo travels inside the signature (~'+kb+' KB), so there is nothing to host and nothing to set up — press <b>Copy signature</b> and paste it in.<br><br>Gmail and other webmail strip embedded photos. If you need those too, open <b>Also need Gmail or webmail?</b> above.</div></div></div>';
+    $('imgout').innerHTML='<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Only needed for Gmail or webmail — right-click → <b>Save image as…</b></div></div></div>';
+  }else{
+    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Using a hosted photo.</b> The HTML is '+kb+' KB and will render in every mail client.</div></div></div>';
+    $('imgout').innerHTML = photoData ? '<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Right-click → <b>Save image as…</b> if you still need to upload it.</div></div></div>' : '';
+  }
+}
+
+/* ---------- copy ---------- */
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+async function copyPlain(text,msg){
+  try{ await navigator.clipboard.writeText(text); toast(msg); }
+  catch(e){
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast(msg);}catch(_){toast('Copy failed — select the code and copy manually');}
+    ta.remove();
+  }
+}
+async function copyRich(html,label){
+  try{
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html':new Blob([html],{type:'text/html'}),
+      'text/plain':new Blob([html],{type:'text/plain'})
+    })]);
+    toast(label||'Signature copied');
+  }catch(e){
+    const d=document.createElement('div');
+    d.contentEditable='true';d.innerHTML=html;
+    d.style.cssText='position:fixed;left:-9999px;top:0;white-space:normal';
+    document.body.appendChild(d);
+    const r=document.createRange();r.selectNodeContents(d);
+    const s=getSelection();s.removeAllRanges();s.addRange(r);
+    try{document.execCommand('copy');toast(label||'Signature copied');}
+    catch(_){toast('Copy failed — use Copy HTML instead');}
+    s.removeAllRanges();d.remove();
+  }
+}
+function copyAs(variant,label){
+  sigVariant=variant;
+  render();                       /* preview + code pane follow the button */
+  copyRich(lastHtml,label);
+}
+$('btn-new').addEventListener('click',()=>copyAs('newoutlook','Signature copied — paste into Outlook'));
+$('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
+$('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
+
+const PEOPLE_BASE='https://thriveassetmx.github.io/thrive-email-signatures/people/';
+/* ── Set this to your deployed Worker address to switch the whole team from
+   ── personal GitHub tokens to one shared password. Leave '' for token mode.
+   ── e.g. 'https://thrive-signature-upload.<your-subdomain>.workers.dev'   */
+const UPLOAD_ENDPOINT='';
+
+const REPO='thriveassetmx/thrive-email-signatures';
+const PW_MODE=Boolean(UPLOAD_ENDPOINT);
+const TOKEN_KEY='thrive-sig-token';
+
+function slugify(v){
+  /* Fold accents to their base letters first, so María becomes maria and not
+     mara. NFD splits a letter from its accent; the range strips the accents. */
+  return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[\u2018\u2019\u02bc]/g,'')          /* curly apostrophes */
+    .trim().toLowerCase()
+    .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+}
+function defaultFilename(){ return (slugify($('f-name').value)||'headshot')+'-square.png'; }
+
+/* The filename tracks the name until someone edits it by hand. */
+let filenameTouched=false;
+$('f-filename').addEventListener('input',()=>{filenameTouched=true;syncPublishBtn();});
+function syncFilename(){ if(!filenameTouched) $('f-filename').value=defaultFilename(); }
+
+function pubStatus(kind,html){
+  const box=$('pubstatus');
+  if(!kind){ box.innerHTML=''; return; }
+  const cls = kind==='err' ? 'warn' : kind==='ok' ? 'good' : 'warn';
+  const ic  = kind==='err' ? '!' : kind==='ok' ? '✓' : '…';
+  box.innerHTML='<div class="note '+cls+'"><span class="ic">'+ic+'</span><div>'+html+'</div></div>';
+}
+function authValue(){ return PW_MODE ? $('f-password').value.trim() : $('f-token').value.trim(); }
+function syncPublishBtn(){
+  $('btn-publish').disabled = !(photoData && authValue() && $('f-filename').value.trim());
+}
+$('auth-pw').hidden = !PW_MODE;
+$('auth-token').hidden = PW_MODE;
+$('f-token').addEventListener('input',syncPublishBtn);
+$('f-password').addEventListener('input',syncPublishBtn);
+
+/* restore a token saved on this device */
+try{
+  const t=PW_MODE?null:localStorage.getItem(TOKEN_KEY);
+  if(t){ $('f-token').value=t; $('btn-forget').hidden=false; }
+}catch(e){}
+$('btn-forget').addEventListener('click',()=>{
+  try{localStorage.removeItem(TOKEN_KEY);}catch(e){}
+  $('f-token').value=''; $('btn-forget').hidden=true; syncPublishBtn();
+  pubStatus('ok','Token removed from this browser.');
+});
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* Password mode: the Worker holds the GitHub credentials and does the commit. */
+async function publishViaWorker(file,secret){
+  const r=await fetch(UPLOAD_ENDPOINT,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({password:secret,filename:file,contentBase64:photoData.split(',')[1]})
+  });
+  let d={}; try{ d=await r.json(); }catch(_){}
+  if(r.status===401) throw new Error('PW');
+  if(!r.ok) throw new Error(d.error||('Upload failed ('+r.status+')'));
+  return d.url;
+}
+
+async function publish(){
+  const secret=authValue();
+  const file=$('f-filename').value.trim().replace(/^people\//,'');
+  if(!photoData||!secret||!file) return;
+  if(!/\.png$/i.test(file)){ pubStatus('err','The filename needs to end in <b>.png</b> — the crop is exported as a PNG.'); return; }
+
+  const btn=$('btn-publish'); btn.disabled=true; const label=btn.textContent; btn.textContent='Uploading…';
+  const path='people/'+file;
+
+  try{
+    pubStatus('wait','Uploading <b>'+path+'</b> to the repo…');
+
+    if(PW_MODE){
+      await publishViaWorker(file,secret);
+    }else{
+      const api='https://api.github.com/repos/'+REPO+'/contents/'+path;
+      const headers={'Authorization':'Bearer '+secret,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+
+      /* An existing file needs its blob sha, or GitHub rejects the overwrite. */
+      let sha=null;
+      const probe=await fetch(api,{headers});
+      if(probe.status===200){ sha=(await probe.json()).sha; }
+      else if(probe.status===401){ throw new Error('AUTH'); }
+      else if(probe.status===403){ throw new Error('PERM'); }
+
+      const body={message:'Add signature photo: '+file,content:photoData.split(',')[1]};
+      if(sha) body.sha=sha;
+      const put=await fetch(api,{method:'PUT',headers,body:JSON.stringify(body)});
+
+      if(put.status===401) throw new Error('AUTH');
+      if(put.status===403) throw new Error('PERM');
+      if(put.status===404) throw new Error('NOTFOUND');
+      if(!put.ok){
+        let d={}; try{d=await put.json();}catch(_){}
+        throw new Error('GitHub said: '+(d.message||put.status));
+      }
+      try{ localStorage.setItem(TOKEN_KEY,secret); $('btn-forget').hidden=false; }catch(e){}
+    }
+
+    /* Committed is not the same as served — Pages has to rebuild first. */
+    const url=PEOPLE_BASE+file;
+    pubStatus('wait','Committed. Waiting for GitHub Pages to publish it — usually under a minute…');
+    let live=false;
+    for(let i=0;i<40;i++){
+      await sleep(3000);
+      try{
+        const head=await fetch(url+'?t='+Date.now(),{method:'HEAD',cache:'no-store'});
+        if(head.ok){ live=true; break; }
+      }catch(e){}
+      if(i===6) pubStatus('wait','Committed. Still waiting on the Pages build — this can take a couple of minutes on a first upload…');
+    }
+
+    $('f-hosted').value=url; filenameTouched=true; render();
+
+    if(live){
+      pubStatus('ok','Published and wired in. The signature HTML now loads the photo from<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all">'+url+'</code>');
+    }else{
+      pubStatus('wait','Committed to the repo, but Pages has not served it yet. The HTML already points at<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all">'+url+'</code><br>It will start working once the build finishes — check the repo\u2019s Actions tab if it stays blank.');
+    }
+  }catch(err){
+    const m=String(err.message||err);
+    if(m==='PW')            pubStatus('err','Wrong password. Check with whoever set up the uploader.');
+    else if(m==='AUTH')     pubStatus('err','That token was rejected. Check it has not expired and was copied in full.');
+    else if(m==='PERM')     pubStatus('err','The token is valid but lacks write access. It needs <b>Contents: Read and write</b> on <b>'+REPO+'</b>.');
+    else if(m==='NOTFOUND') pubStatus('err','Repository not reachable with this token. A fine-grained token must list <b>'+REPO+'</b> under its repository access.');
+    else if(/Failed to fetch|NetworkError/i.test(m)) pubStatus('err','Could not reach api.github.com. Check the connection and try again.');
+    else                    pubStatus('err',m);
+  }finally{
+    btn.textContent=label; syncPublishBtn();
+  }
+}
+$('btn-publish').addEventListener('click',publish);
+
+function suggestUrl(){
+  const slug=slugify($('f-name').value);
+  $('urlpattern').textContent = PEOPLE_BASE + (slug||'your-name') + '-square.png';
+}
+$('f-name').addEventListener('input',()=>{suggestUrl();syncFilename();});
+
+/* ── Prefilled links ─────────────────────────────────────────────────────
+   Details ride in the hash, not the query string: browsers never transmit a
+   fragment to the server, so names, phone numbers and addresses stay out of
+   request logs and referrer headers on the way. */
+const LINK_FIELDS={n:'f-name',t:'f-title',p:'f-phone',e:'f-email',c:'f-company',h:'f-hosted'};
+
+/* Forget the previous person entirely: a leftover crop or hosted address would
+   otherwise ride along and put one person's face on another's signature. */
+function clearPhoto(){
+  photoData=''; srcImg=null;
+  $('croprow').hidden=true; $('btn-uri').hidden=true;
+  try{ $('f-file').value=''; }catch(e){}
+  $('imgout').innerHTML=''; $('sizenote').innerHTML='';
+  pubStatus(null);
+}
+
+function applyPrefill(){
+  const raw=location.hash.replace(/^#/,'');
+  if(!raw) return false;
+  let q; try{ q=new URLSearchParams(raw); }catch(e){ return false; }
+
+  /* Does this link describe anybody? Only then do we take it over the page. */
+  let filled=0;
+  for(const key of Object.keys(LINK_FIELDS)) if(q.has(key)) filled++;
+  if(!filled) return false;
+
+  /* A link is a COMPLETE description of one person. Whatever it leaves out has
+     to be blanked, not inherited — otherwise opening Tracy's link after James's
+     leaves his photo attached to her name. */
+  for(const [key,id] of Object.entries(LINK_FIELDS)){
+    const el=$(id); if(!el) continue;
+    if(el.tagName==='SELECT'){
+      const val=q.get(key);
+      if(q.has(key) && [...el.options].some(o=>o.value===val)) el.value=val;
+      continue;                       /* no blank option, so leave the default */
+    }
+    el.value = q.has(key) ? q.get(key) : '';
+  }
+
+  clearPhoto();
+  filenameTouched=false;              /* let the filename track the new name */
+  return true;
+}
+
+function buildLink(){
+  const q=new URLSearchParams();
+  for(const [key,id] of Object.entries(LINK_FIELDS)){
+    const el=$(id); if(!el) continue;
+    const v=el.value.trim();
+    if(v) q.set(key,v);
+  }
+  return location.origin+location.pathname+'#'+q.toString();
+}
+
+function refreshLink(){
+  const url=buildLink();
+  $('f-link').value=url;
+  const named=$('f-name').value.trim();
+  $('linkhint').textContent = named ? 'for '+named : 'fill in a name first';
+  $('btn-link').disabled = !named;
+}
+$('btn-link').addEventListener('click',()=>copyPlain(buildLink(),'Link copied — send it over'));
+
+['f-name','f-title','f-phone','f-email','f-hosted'].forEach(id=>$(id).addEventListener('input',()=>{render();refreshLink();}));
+sel.addEventListener('change',()=>{render();refreshLink();});
+['f-zoom','f-cropx','f-cropy'].forEach(id=>$(id).addEventListener('input',drawCrop));
+$('btn-cropreset').addEventListener('click',resetCrop);
+
+/* Browsers restore previously typed form values on reload and on back/forward,
+   and that restoration lands AFTER this script first runs — which would silently
+   overwrite a prefilled link with whatever the last person typed. Re-applying on
+   pageshow (which fires after both a normal load and a bfcache restore) makes the
+   link win, which is the whole point of sending one. */
+function initFromLink(){
+  if(applyPrefill()) $('prefill-banner').hidden=false;
+  suggestUrl(); syncFilename(); refreshLink(); render();
+}
+initFromLink();
+window.addEventListener('pageshow',initFromLink);
+window.addEventListener('hashchange',initFromLink);
+</script>
