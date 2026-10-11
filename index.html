@@ -242,10 +242,10 @@ ol.steps b{color:var(--ink);font-weight:600}
       </div>
     </section>
 
-    <details class="card" id="hostpanel">
-      <summary>Also need Gmail or webmail? <span>Optional</span></summary>
+    <details class="card" id="hostpanel" open>
+      <summary>Host your photo <span>Recommended</span></summary>
       <div class="body">
-        <div class="note good"><span class="ic">i</span><div>Skip this for Outlook. Outlook keeps the photo with the signature, so nothing needs hosting. Gmail and other webmail strip embedded photos — only then does the photo need a web address.</div></div>
+        <div class="note good"><span class="ic">i</span><div>Outlook desktop keeps an embedded photo with the signature, no hosting needed. But Outlook on mobile, Outlook on the web, Gmail, and other webmail can all shrink or strip an embedded photo down to a tiny thumbnail. Hosting it — the same way the company logo already is — keeps it working everywhere.</div></div>
 
         <div>
           <div style="font-weight:600;margin-bottom:6px">Put the photo on the web — no tools required</div>
@@ -263,8 +263,8 @@ ol.steps b{color:var(--ink);font-weight:600}
           <div class="hint">Once committed, your photo lives at:<br><code style="font-family:var(--mono);font-size:11px;word-break:break-all" id="urlpattern">https://thriveassetmx.github.io/thrive-email-signatures/people/your-name.png</code></div>
         </div>
 
-        <details style="margin-top:2px">
-          <summary style="font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:0">Upload straight from this page instead</summary>
+        <details style="margin-top:2px" open>
+          <summary style="font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:0">Upload straight from this page instead (recommended)</summary>
           <div style="display:flex;flex-direction:column;gap:14px;padding-top:12px">
             <div id="auth-pw" hidden>
               <label for="f-password">Upload password</label>
@@ -614,7 +614,7 @@ function render(){
   const usingData = photoSrc.startsWith('data:');
   const kb=Math.round(html.length/1024);
   if(usingData){
-    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Ready for Outlook.</b> The photo travels inside the signature (~'+kb+' KB), so there is nothing to host and nothing to set up — press <b>Copy signature</b> and paste it in.<br><br>Gmail and other webmail strip embedded photos. If you need those too, open <b>Also need Gmail or webmail?</b> above.</div></div></div>';
+    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note warn"><span class="ic">!</span><div><b>Only reliable on Outlook desktop as-is.</b> The photo travels inside the signature (~'+kb+' KB), which needs no hosting for Outlook desktop. But Outlook mobile, Outlook on the web, Gmail, and other webmail can shrink an embedded photo to a tiny thumbnail.<br><br>For something that works everywhere, use <b>Host your photo</b> above — same one-click <b>Crop, upload &amp; use</b> flow as the logo.</div></div></div>';
     $('imgout').innerHTML='<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Only needed for Gmail or webmail — right-click → <b>Save image as…</b></div></div></div>';
   }else{
     $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Using a hosted photo.</b> The HTML is '+kb+' KB and will render in every mail client.</div></div></div>';
