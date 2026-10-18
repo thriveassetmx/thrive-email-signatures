@@ -321,8 +321,12 @@ ol.steps b{color:var(--ink);font-weight:600}
    generated signature never depends on that other site being reachable when
    the recipient's mail client renders it. See thrive-brain Decisions/2026-10-11
    - Serve signature images from thrive-email-signatures' own assets folder. */
-const ICON_PHONE='assets/phone.png';
-const ICON_ENVELOPE='assets/envelope.png';
+/* Absolute, never relative: the copied signature is pasted into a mail client,
+   which has no base URL to resolve 'assets/...' against, so a relative src
+   shows as a broken image to every recipient. */
+const ASSET_BASE='https://thriveassetmx.github.io/thrive-email-signatures/assets/';
+const ICON_PHONE=ASSET_BASE+'phone.png';
+const ICON_ENVELOPE=ASSET_BASE+'envelope.png';
 
 /* Measured from the real logo files in the brand book — each lockup has its
    own proportions, so every logo is sized from its own aspect at 45px tall. */
@@ -345,7 +349,7 @@ const COMPANIES=[
    is the same failure mode that broke the Superhuman build: a client that
    drops the sizing reverts to native pixel size. See thrive-brain
    Decisions/2026-09-18 - Fix Superhuman Signature Drift for James Brewer. */
-const logoUrl=c=>'assets/logo-'+c.id+'.png';
+const logoUrl=c=>ASSET_BASE+'logo-'+c.id+'.png';
 const LOGO_H=45;
 
 const $=id=>document.getElementById(id);
