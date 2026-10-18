@@ -226,7 +226,7 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li><b>Outlook on the web / new Outlook:</b> Settings → Mail → Compose and reply</li>
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
-        <div class="note good"><span class="ic">i</span><div><b>One fixed size, everywhere.</b> The whole signature is 350px wide: a 100px photo and a 238px text column. Every image is exactly 2x its display size, there is no padding, and text is Arial/Helvetica, so it looks the same in Outlook, Gmail, Apple Mail and on phones. “Copy HTML” gives the raw source of the same signature.</div></div>
+        <div class="note good"><span class="ic">i</span><div><b>Same proportions, everywhere.</b> The photo is a fixed 174px square, exactly as tall as the text beside it. Every image is exactly 2x its display size, there is no padding, and text is Arial/Helvetica, so it looks the same in Outlook, Gmail, Apple Mail and on phones. “Copy HTML” gives the raw source of the same signature.</div></div>
       </div>
     </section>
 
@@ -297,7 +297,7 @@ ol.steps b{color:var(--ink);font-weight:600}
   <div>
     <section class="previewpane">
       <header>
-        <h2>Live preview <span style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Max 350px</span></h2>
+        <h2>Live preview <span style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Arial · 2x images</span></h2>
         <div class="dims" id="dims">—</div>
       </header>
       <div class="stage" id="stage"></div>
@@ -326,45 +326,48 @@ ol.steps b{color:var(--ink);font-weight:600}
    which has no base URL to resolve 'assets/...' against, so a relative src
    shows as a broken image to every recipient. */
 const ASSET_BASE='https://thriveassetmx.github.io/thrive-email-signatures/assets/';
-const ICON_PHONE=ASSET_BASE+'phone-28.png';        /* 28px file, shown at 14px */
-const ICON_ENVELOPE=ASSET_BASE+'envelope-28.png';
+const ICON_PHONE=ASSET_BASE+'phone-56.png';        /* 56px file, shown at 28px */
+const ICON_ENVELOPE=ASSET_BASE+'envelope-56.png';
 
 /* logoW is the display width at LOGO_H tall: exactly half the pixel width of
-   assets/logo-<id>-48.png (each file was padded to an even width for that). */
+   assets/logo-<id>-90.png (each file was padded to an even width for that). */
 /* Alphabetical by name. The site is fixed per company rather than typed in, so
    a signature cannot go out pointing at the wrong place. Every URL below was
    checked to resolve. An empty site means the logo is not linked at all
    (Holdings and Ventures, per Tatiana 2026-09-29). */
 const COMPANIES=[
-  {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       logoW:68, site:'https://thriveassetmx.com'},
-  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     logoW:75, site:'https://thrivecapitalmx.com'},
-  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           logoW:80, site:'https://thrivecreative.exchange'},
-  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      logoW:69, site:''},
-  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', logoW:75, site:'https://thriveassetmx.com'},
-  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    logoW:75, site:'https://thrivepropertymx.com'},
-  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      logoW:69, site:''}
+  {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       logoW:128, site:'https://thriveassetmx.com'},
+  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     logoW:140, site:'https://thrivecapitalmx.com'},
+  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           logoW:151, site:'https://thrivecreative.exchange'},
+  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      logoW:130, site:''},
+  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', logoW:140, site:'https://thriveassetmx.com'},
+  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    logoW:140, site:'https://thrivepropertymx.com'},
+  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      logoW:129, site:''}
 ];
-/* Every image is exported at exactly 2x its display size (logos 48px tall for
-   24px, icons 28px for 14px, photos 200px for 100px), so a client that drops
+/* Every image is exported at exactly 2x its display size (logos 90px tall for
+   45px, icons 56px for 28px, photos 348px for 174px), so a client that drops
    width/height attributes still shows it at a sane size, never a 5000px master.
    See thrive-brain Decisions/2026-09-18 - Fix Superhuman Signature Drift.
    The older logo-<id>.png (135px) files stay in assets/ for signatures already
    pasted with them. */
-const logoUrl=c=>ASSET_BASE+'logo-'+c.id+'-48.png';
+const logoUrl=c=>ASSET_BASE+'logo-'+c.id+'-90.png';
 
-/* ---------- fixed geometry: the signature never exceeds 350px wide ----------
-   350 fits the narrowest phone mail view. Nothing is measured or stretched per
-   person: photo, gap and text column are the same for everyone. */
-const SIG_W=350, PHOTO=100, GAP=12, TEXT_W=SIG_W-PHOTO-GAP;   /* 238 */
-const ICON=14, ICON_GAP=8, ROW_TEXT_W=TEXT_W-ICON-ICON_GAP;    /* 216 */
-const LOGO_H=24;
+/* ---------- geometry ----------
+   Sizes are the original builder's (name 21px, title 15px, rows 16px, 28px
+   icons, 45px logo). The photo is a fixed square exactly as tall as the text
+   column; the text column is at least 280px and grows to fit the longest line,
+   so nothing ever wraps. */
+const PHOTO=174, GAP=34, ICON=28, ICON_GAP=14, LOGO_H=45, MIN_TEXT_W=280;
 const PHOTO_EXPORT=PHOTO*2;
-/* One plain system font, so the width the builder checks is the width every
+let TEXT_W=MIN_TEXT_W, ROW_TEXT_W=MIN_TEXT_W-ICON-ICON_GAP;
+/* One plain system font, so the width the builder measures is the width every
    client draws: Arial on Windows/Android, Helvetica on Apple. */
 const FONT='Arial, Helvetica, sans-serif';
-/* Text rows. Spacing comes from line-height only, no padding anywhere.
-   name+title+gap+phone+email+gap+logo = 20+16+4+17+17+2+24 = 100 = PHOTO. */
-const T={ name:{size:16,lh:20}, title:{size:12,lh:16}, row:{size:12,lh:17}, gapA:4, gapB:2 };
+/* Spacing is line-height only, no padding anywhere. Column height:
+   name 26 + 4 + title 21 + 10 + phone 28 + 4 + email 28 + 8 + logo 45 = 174 = PHOTO.
+   The 8px before the logo keeps it off the email line. */
+const T={ name:{size:21,lh:26}, title:{size:15,lh:21}, row:{size:16,lh:28},
+          gapName:4, gapTitle:10, gapRow:4, gapLogo:8 };
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -485,6 +488,7 @@ const spacer=h=>`<tr><td height="${h}" style="${Z} height:${h}px; font-size:1px;
 
 function buildSig(photoSrc){
   const c=company(), lw=c.logoW;
+  fitTextW(c);
   const name=esc($('f-name').value.trim());
   const title=esc($('f-title').value.trim());
   const phone=esc($('f-phone').value.trim());
@@ -513,18 +517,20 @@ function buildSig(photoSrc){
   const photoCells = photoSrc ? `
     <td width="${PHOTO}" height="${PHOTO}" valign="top" style="${Z} width:${PHOTO}px; height:${PHOTO}px; font-size:1px; line-height:1px; vertical-align:top;"><img src="${photoSrc}" width="${PHOTO}" height="${PHOTO}" alt="${name}" style="display:block; width:${PHOTO}px; height:${PHOTO}px; border:0; outline:none; text-decoration:none;"></td>
     <td width="${GAP}" style="${Z} width:${GAP}px; font-size:1px; line-height:1px;">&nbsp;</td>` : '';
-  const outerW = photoSrc ? SIG_W : TEXT_W;
+  const outerW = photoSrc ? PHOTO+GAP+TEXT_W : TEXT_W;
 
   return `<table role="presentation" width="${outerW}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${outerW}px; table-layout:fixed;">
   <tr>${photoCells}
     <td width="${TEXT_W}" valign="top" style="${Z} width:${TEXT_W}px; vertical-align:top;">
       <table role="presentation" id="sig-text" width="${TEXT_W}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${TEXT_W}px; table-layout:fixed;">
-        ${text(name,T.name,' font-weight:bold;')}
+        ${text(name,T.name,' font-weight:bold; letter-spacing:0.3px;')}
+        ${spacer(T.gapName)}
         ${text(title,T.title,' font-style:italic;')}
-        ${spacer(T.gapA)}
+        ${spacer(T.gapTitle)}
         ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:none;">${phone}</a>`)}
+        ${spacer(T.gapRow)}
         ${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`)}
-        ${spacer(T.gapB)}
+        ${spacer(T.gapLogo)}
         <tr><td width="${TEXT_W}" height="${LOGO_H}" style="${Z} width:${TEXT_W}px; height:${LOGO_H}px; font-size:1px; line-height:${LOGO_H}px; mso-line-height-rule:exactly;">${logoCell}</td></tr>
       </table>
     </td>
@@ -532,22 +538,21 @@ function buildSig(photoSrc){
 </table>`;
 }
 
-/* ---------- does every line fit its fixed column? ---------- */
-/* The column is fixed, so a long email cannot be allowed to push the block past
-   350px. Measure each line in the same font the clients use and say so. */
+/* ---------- size the text column to its longest line ---------- */
 const measureCtx=document.createElement('canvas').getContext('2d');
-function textW(str,size,weight,style){
+function textW(str,size,weight,style,spacing){
   measureCtx.font=`${style||'normal'} ${weight||'normal'} ${size}px Arial, Helvetica, sans-serif`;
-  return Math.ceil(measureCtx.measureText(str).width);
+  str=String(str).trim();
+  return Math.ceil(measureCtx.measureText(str).width + (spacing||0)*str.length);
 }
-function overflowList(){
-  const out=[];
-  const chk=(label,v,size,max,w,st)=>{ v=v.trim(); if(!v) return; const px=textW(v,size,w,st); if(px>max) out.push(`<b>${label}</b> is ${px}px, room for ${max}px`); };
-  chk('Name',$('f-name').value,T.name.size,TEXT_W,'bold');
-  chk('Title',$('f-title').value,T.title.size,TEXT_W,'normal','italic');
-  chk('Phone',$('f-phone').value,T.row.size,ROW_TEXT_W);
-  chk('Email',$('f-email').value,T.row.size,ROW_TEXT_W);
-  return out;
+function fitTextW(c){
+  const rowExtra=ICON+ICON_GAP;
+  TEXT_W=Math.max(MIN_TEXT_W, c.logoW,
+    textW($('f-name').value,T.name.size,'bold','normal',0.3),
+    textW($('f-title').value,T.title.size,'normal','italic'),
+    rowExtra+textW($('f-phone').value,T.row.size),
+    rowExtra+textW($('f-email').value,T.row.size)) + 4;   /* 4px slack for font rounding */
+  ROW_TEXT_W=TEXT_W-rowExtra;
 }
 
 /* ---------- render ---------- */
@@ -575,10 +580,7 @@ function render(){
     : 'Logo is not linked for this company.';
   $('btn-new').disabled=$('btn-html').disabled=false;
 
-  const over=overflowList();
-  const overNote = over.length
-    ? '<div class="note warn" style="margin-bottom:10px"><span class="ic">!</span><div><b>Too long for the 350px layout.</b> '+over.join('; ')+'. Shorten that line (a nickname, a shorter title), or it will run past the edge on phones.</div></div>'
-    : '';
+  const overNote='';
 
   /* hosted vs embedded */
   const usingData = photoSrc.startsWith('data:');
