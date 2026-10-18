@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Thrive Signature Builder</title>
 <link rel="icon" href="https://thriveassetmx.github.io/thrive-brand-book/companies/assets-mx/favicon/assetmx-favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -225,7 +226,7 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li><b>Outlook on the web / new Outlook:</b> Settings → Mail → Compose and reply</li>
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
-        <div class="note good"><span class="ic">i</span><div><b>Built for Outlook.</b> Every row is pinned to an exact height and the text column is locked to a fixed width, so Word cannot squeeze the block or wrap the phone number and email when it swaps in Century Gothic. “Copy HTML” gives the raw source of the same signature.</div></div>
+        <div class="note good"><span class="ic">i</span><div><b>One fixed size, everywhere.</b> The whole signature is 350px wide: a 100px photo and a 238px text column. Every image is exactly 2x its display size, there is no padding, and text is Arial/Helvetica, so it looks the same in Outlook, Gmail, Apple Mail and on phones. “Copy HTML” gives the raw source of the same signature.</div></div>
       </div>
     </section>
 
@@ -296,13 +297,13 @@ ol.steps b{color:var(--ink);font-weight:600}
   <div>
     <section class="previewpane">
       <header>
-        <h2>Live preview <span id="variantTag" style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Outlook build</span></h2>
+        <h2>Live preview <span style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Max 350px</span></h2>
         <div class="dims" id="dims">—</div>
       </header>
       <div class="stage" id="stage"></div>
-      <div class="stage-note">Shown on white, the way an email body renders. Preview uses the Gabarito/Manrope brand faces; mail clients can’t load webfonts, so they fall back to Century Gothic or Trebuchet — the signature is built to degrade to those.</div>
+      <div class="stage-note">Shown on white at true size, the way an email body renders, in the same Arial/Helvetica every mail client uses.</div>
       <div class="actions">
-        <button class="primary" id="btn-new">Copy for Outlook</button>
+        <button class="primary" id="btn-new">Copy signature</button>
         <button id="btn-html">Copy HTML</button>
         <button id="btn-uri" hidden>Copy photo data URI</button>
       </div>
@@ -325,37 +326,49 @@ ol.steps b{color:var(--ink);font-weight:600}
    which has no base URL to resolve 'assets/...' against, so a relative src
    shows as a broken image to every recipient. */
 const ASSET_BASE='https://thriveassetmx.github.io/thrive-email-signatures/assets/';
-const ICON_PHONE=ASSET_BASE+'phone.png';
-const ICON_ENVELOPE=ASSET_BASE+'envelope.png';
+const ICON_PHONE=ASSET_BASE+'phone-28.png';        /* 28px file, shown at 14px */
+const ICON_ENVELOPE=ASSET_BASE+'envelope-28.png';
 
-/* Measured from the real logo files in the brand book — each lockup has its
-   own proportions, so every logo is sized from its own aspect at 45px tall. */
+/* logoW is the display width at LOGO_H tall: exactly half the pixel width of
+   assets/logo-<id>-48.png (each file was padded to an even width for that). */
 /* Alphabetical by name. The site is fixed per company rather than typed in, so
    a signature cannot go out pointing at the wrong place. Every URL below was
    checked to resolve. An empty site means the logo is not linked at all
    (Holdings and Ventures, per Tatiana 2026-09-29). */
 const COMPANIES=[
-  {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       aspect:2.8474, site:'https://thriveassetmx.com'},
-  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     aspect:3.1037, site:'https://thrivecapitalmx.com'},
-  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           aspect:3.3422, site:'https://thrivecreative.exchange'},
-  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      aspect:2.8769, site:''},
-  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', aspect:3.1056, site:'https://thriveassetmx.com'},
-  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    aspect:3.1056, site:'https://thrivepropertymx.com'},
-  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      aspect:2.8703, site:''}
+  {id:'assets-mx',        name:'Thrive Asset MX',         slug:'assetmx',       logoW:68, site:'https://thriveassetmx.com'},
+  {id:'capital-mx',       name:'Thrive Capital MX',       slug:'capitalmx',     logoW:75, site:'https://thrivecapitalmx.com'},
+  {id:'creative-exchange',name:'Thrive Creative Exchange',slug:'tce',           logoW:80, site:'https://thrivecreative.exchange'},
+  {id:'holdings',         name:'Thrive Holdings',         slug:'holdings',      logoW:69, site:''},
+  {id:'hospitality-mx',   name:'Thrive Hospitality MX',   slug:'hospitalitymx', logoW:75, site:'https://thriveassetmx.com'},
+  {id:'property-mx',      name:'Thrive Property MX',      slug:'propertymx',    logoW:75, site:'https://thrivepropertymx.com'},
+  {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      logoW:69, site:''}
 ];
-/* Each logo-<id>.png in assets/ is the same pre-sized 3x-retina export (135px
-   tall) the brand book publishes, not its 5000px master. Pointing the
-   signature at a master and shrinking it with width/height attributes alone
-   is the same failure mode that broke the Superhuman build: a client that
-   drops the sizing reverts to native pixel size. See thrive-brain
-   Decisions/2026-09-18 - Fix Superhuman Signature Drift for James Brewer. */
-const logoUrl=c=>ASSET_BASE+'logo-'+c.id+'.png';
-const LOGO_H=45;
+/* Every image is exported at exactly 2x its display size (logos 48px tall for
+   24px, icons 28px for 14px, photos 200px for 100px), so a client that drops
+   width/height attributes still shows it at a sane size, never a 5000px master.
+   See thrive-brain Decisions/2026-09-18 - Fix Superhuman Signature Drift.
+   The older logo-<id>.png (135px) files stay in assets/ for signatures already
+   pasted with them. */
+const logoUrl=c=>ASSET_BASE+'logo-'+c.id+'-48.png';
+
+/* ---------- fixed geometry: the signature never exceeds 350px wide ----------
+   350 fits the narrowest phone mail view. Nothing is measured or stretched per
+   person: photo, gap and text column are the same for everyone. */
+const SIG_W=350, PHOTO=100, GAP=12, TEXT_W=SIG_W-PHOTO-GAP;   /* 238 */
+const ICON=14, ICON_GAP=8, ROW_TEXT_W=TEXT_W-ICON-ICON_GAP;    /* 216 */
+const LOGO_H=24;
+const PHOTO_EXPORT=PHOTO*2;
+/* One plain system font, so the width the builder checks is the width every
+   client draws: Arial on Windows/Android, Helvetica on Apple. */
+const FONT='Arial, Helvetica, sans-serif';
+/* Text rows. Spacing comes from line-height only, no padding anywhere.
+   name+title+gap+phone+email+gap+logo = 20+16+4+17+17+2+24 = 100 = PHOTO. */
+const T={ name:{size:16,lh:20}, title:{size:12,lh:16}, row:{size:12,lh:17}, gapA:4, gapB:2 };
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 let srcImg=null, photoData='', lastHtml='';
-let sigVariant='newoutlook';   /* the build the button ships; 'outlook' and 'superhuman' kept in buildSig for reference */
 
 /* ---------- company picker ---------- */
 const sel=$('f-company');
@@ -382,7 +395,7 @@ function drawCrop(){
   const w=srcImg.naturalWidth, h=srcImg.naturalHeight;
   const zoom=+$('f-zoom').value/100;
 
-  const c=document.createElement('canvas'); c.width=404; c.height=404;
+  const c=document.createElement('canvas'); c.width=PHOTO_EXPORT; c.height=PHOTO_EXPORT;
   const x=c.getContext('2d');
   x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
 
@@ -396,10 +409,10 @@ function drawCrop(){
      and only then does the cover-crop below apply. */
   if(zoom<=1){
     x.fillStyle='#ffffff';
-    x.fillRect(0,0,404,404);
-    const scale=404/Math.max(w,h);
+    x.fillRect(0,0,PHOTO_EXPORT,PHOTO_EXPORT);
+    const scale=PHOTO_EXPORT/Math.max(w,h);
     const dw=w*scale, dh=h*scale;
-    const ox=(404-dw)/2, oy=(404-dh)/2;
+    const ox=(PHOTO_EXPORT-dw)/2, oy=(PHOTO_EXPORT-dh)/2;
     x.drawImage(srcImg,0,0,w,h,ox,oy,dw,dh);
     photoData=c.toDataURL('image/png');
     $('cropimg').src=photoData;
@@ -417,7 +430,7 @@ function drawCrop(){
   const sx=Math.round(maxX*(+$('f-cropx').value/100));
   const sy=Math.round(maxY*(+$('f-cropy').value/100));
 
-  x.drawImage(srcImg,sx,sy,side,side,0,0,404,404);
+  x.drawImage(srcImg,sx,sy,side,side,0,0,PHOTO_EXPORT,PHOTO_EXPORT);
   photoData=c.toDataURL('image/png');
   $('cropimg').src=photoData;
 
@@ -462,127 +475,82 @@ const drop=$('drop');
 drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
 
 /* ---------- build the signature markup ---------- */
-function buildSig(photoSrc,photoPx,variant){
-  const SH = (variant||sigVariant)==='superhuman';
-  /* NEW OUTLOOK build = the Outlook build plus a locked text-column width and
-     no-wrap text cells. Mail clients fall back to Century Gothic, which runs
-     wider than Manrope; with no width set, Word squeezes the column and breaks
-     the phone number at a hyphen, throwing off the pinned row heights. The
-     original Outlook and Superhuman builds are left exactly as they were. */
-  const NO = (variant||sigVariant)==='newoutlook';
-  const c=company(), lw=Math.round(LOGO_H*c.aspect);
+/* One build for every client. Every cell states its width and height both as
+   an attribute (Outlook/Word) and inline CSS (everything else); nothing has
+   padding or margin; vertical rhythm is line-height alone, with
+   mso-line-height-rule:exactly so Word does not round it up. */
+const Z='padding:0; margin:0; border:0;';
+const TBL='border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; '+Z;
+const spacer=h=>`<tr><td height="${h}" style="${Z} height:${h}px; font-size:1px; line-height:${h}px; mso-line-height-rule:exactly;">&nbsp;</td></tr>`;
+
+function buildSig(photoSrc){
+  const c=company(), lw=c.logoW;
   const name=esc($('f-name').value.trim());
   const title=esc($('f-title').value.trim());
   const phone=esc($('f-phone').value.trim());
   const email=esc($('f-email').value.trim());
-  const site=c.site;
   const tel=telHref($('f-phone').value);
-  const est=(v,px,k)=>Math.ceil((v||'').length*px*k);
-  const textW=Math.max(280,
-    est($('f-name').value.trim(),21,0.68),
-    est($('f-title').value.trim(),15,0.6),
-    42+est($('f-phone').value.trim(),16,0.62),
-    42+est($('f-email').value.trim(),16,0.62),
-    lw);
-  /* The builder page sets *{box-sizing:border-box}, so the preview measures a
-     row's stated height as INCLUDING its padding, and sizes the photo to that
-     total. Word has no border-box: it treats height as content and ADDS the
-     padding, so every row grows and the logo drops below the photo. In the
-     New Outlook build state each height net of its own padding, so Word's
-     height+padding equals the preview's total. */
-  const h = (total,pad) => NO ? Math.max(0,total-pad) : total;
-  const NW = NO ? ' nowrap' : '';                 /* cell attribute */
-  const NWS = NO ? ' white-space:nowrap;' : '';   /* inline style   */
-  const FD="'Gabarito','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
-  const FB="'Manrope','Century Gothic','Trebuchet MS','Segoe UI',Arial,sans-serif";
 
-  /* TWO VARIANTS, because the two targets fail in opposite directions.
-     Outlook renders with Word's engine, which honours legacy table attributes
-     and is happiest when every row is pinned to an exact height.
-     Superhuman's compose box is a Chromium contenteditable: pasting runs a
-     sanitiser that can drop bare HTML attributes and re-apply the browser's own
-     typography. Pinning the text column to the photo's height there is a trap —
-     if the sanitiser wins, the two columns disagree and the block visibly
-     drifts. So the Superhuman build states everything as inline CSS, zeroes
-     margins on every text run, and deliberately does NOT lock the text column
-     to the photo height, letting the row be as tall as its tallest cell. */
-  const tblReset = 'border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;'
-                 + (SH ? ' padding:0; margin:0;' : '');
+  const text=(inner,t,extra)=>
+    `<tr><td width="${TEXT_W}" height="${t.lh}" nowrap style="${Z} width:${TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;${extra||''}">${inner}</td></tr>`;
 
-  /* In the Superhuman build every text run gets its own block with margins
-     zeroed, so nothing the sanitiser re-applies can add space around it. */
-  const txt=(inner,font,size,lh,extra)=> SH
-    ? `<div style="margin:0; padding:0; font-family:${font}; font-size:${size}px; line-height:${lh}px; color:#1A1A1A;${extra||''}">${inner}</div>`
-    : inner;
+  const row=(icon,inner)=>{
+    const t=T.row;
+    return `<tr><td width="${TEXT_W}" height="${t.lh}" style="${Z} width:${TEXT_W}px; height:${t.lh}px; font-size:1px; line-height:${t.lh}px; mso-line-height-rule:exactly;">
+          <table role="presentation" width="${TEXT_W}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${TEXT_W}px; table-layout:fixed;"><tr>
+            <td width="${ICON}" height="${t.lh}" valign="middle" style="${Z} width:${ICON}px; height:${t.lh}px; font-size:1px; line-height:${t.lh}px; vertical-align:middle;"><img src="${icon}" width="${ICON}" height="${ICON}" alt="" style="display:block; width:${ICON}px; height:${ICON}px; border:0; outline:none;"></td>
+            <td width="${ICON_GAP}" style="${Z} width:${ICON_GAP}px; font-size:1px; line-height:1px;">&nbsp;</td>
+            <td width="${ROW_TEXT_W}" height="${t.lh}" valign="middle" nowrap style="${Z} width:${ROW_TEXT_W}px; height:${t.lh}px; white-space:nowrap; vertical-align:middle; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;">${inner}</td>
+          </tr></table>
+        </td></tr>`;
+  };
 
-  const rowTextW = Math.max(60, textW-42);   /* total minus icon (28) and gutter (14) */
-  const rowTableAttrs = NO ? ` width="${textW}"` : '';
-  const rowTableStyle = NO ? `width:${textW}px; table-layout:fixed; ${tblReset}` : tblReset;
-  const rowTextCellW = NO ? ` width="${rowTextW}"` : '';
-  const rowTextCellWS = NO ? `width:${rowTextW}px; ` : '';
-  /* The icon is exactly 28px and the row was pinned to exactly 28px of content,
-     so any rounding in Word's layout clipped the top of the glyph. Give the icon
-     2px of slack and take the same 2px out of the row's padding: the row's TOTAL
-     height is unchanged, so the logo still lands flush with the photo. */
-  const SLACK = 2;
-  const rowH   = (pad) => NO ? 28+SLACK      : 28+pad;
-  const rowPad = (pad) => NO ? pad-SLACK     : pad;
-  const row=(icon,inner,pad)=>
-`        <tr>
-          <td${SH?'':` height="${rowH(pad)}"`} style="height:${rowH(pad)}px; padding:0 0 ${rowPad(pad)}px 0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0"${rowTableAttrs} style="${rowTableStyle}">
-              <tr>
-                <td width="28" valign="middle" style="width:28px; padding:0; margin:0; font-size:0; line-height:0;">
-                  <img src="${icon}" width="28" height="28" alt="" style="display:block; width:28px; height:28px; border:0; outline:none;">
-                </td>
-                <td width="14" style="width:14px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>
-                <td valign="middle"${NW}${rowTextCellW}${SH?'':' height="28"'} style="height:28px; padding:0; margin:0;${rowTextCellWS}${NWS} font-family:${FB}; font-size:16px !important; line-height:22px !important; mso-line-height-rule:exactly; color:#1A1A1A;">${txt(inner,FB,16,22)}</td>
-              </tr>
-            </table>
-          </td>
-        </tr>`;
-
-  const logoImg=`<img src="${logoUrl(c)}" width="${lw}" height="${LOGO_H}" alt="${esc(c.name)}" style="display:block; width:${lw}px; height:${LOGO_H}px; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;">`;
-  const logoCell = site
-    ? `<a href="${esc(site)}" target="_blank" style="text-decoration:none; border:0;">${logoImg}</a>`
+  const logoImg=`<img src="${logoUrl(c)}" width="${lw}" height="${LOGO_H}" alt="${esc(c.name)}" style="display:block; width:${lw}px; height:${LOGO_H}px; border:0; outline:none; text-decoration:none;">`;
+  const logoCell = c.site
+    ? `<a href="${esc(c.site)}" target="_blank" style="text-decoration:none; border:0;">${logoImg}</a>`
     : logoImg;
 
-  const photoCell = photoSrc ? `
-    <td valign="top" width="${photoPx}"${SH?'':` height="${photoPx}"`} style="width:${photoPx}px; height:${photoPx}px; padding:0; margin:0; font-size:0; line-height:0; vertical-align:top;">
-      <img src="${photoSrc}" width="${photoPx}" height="${photoPx}" alt="${name}" style="display:block; width:${photoPx}px; height:${photoPx}px; border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic;">
-    </td>
-    <td width="34" style="width:34px; padding:0; margin:0; font-size:0; line-height:0;">&nbsp;</td>` : '';
+  const photoCells = photoSrc ? `
+    <td width="${PHOTO}" height="${PHOTO}" valign="top" style="${Z} width:${PHOTO}px; height:${PHOTO}px; font-size:1px; line-height:1px; vertical-align:top;"><img src="${photoSrc}" width="${PHOTO}" height="${PHOTO}" alt="${name}" style="display:block; width:${PHOTO}px; height:${PHOTO}px; border:0; outline:none; text-decoration:none;"></td>
+    <td width="${GAP}" style="${Z} width:${GAP}px; font-size:1px; line-height:1px;">&nbsp;</td>` : '';
+  const outerW = photoSrc ? SIG_W : TEXT_W;
 
-  /* Outlook: lock the text column to the photo so both finish level.
-     Superhuman: leave it free, so a sanitised line-height cannot misalign it. */
-  const textTableSize = SH ? '' : ` height="${photoPx}"`;
-  const textTableStyle = SH ? tblReset : `${NO?`width:${textW}px; table-layout:fixed; `:''}height:${photoPx}px; ${tblReset}`;
-  const textColW = NO ? ` width="${textW}"` : '';
-  const textColWS = NO ? `width:${textW}px; ` : '';
-
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${tblReset}">
-  <tr>${photoCell}
-    <td valign="top"${textColW} style="${textColWS}padding:0; margin:0; vertical-align:top;">
-      <table role="presentation" id="sig-text" cellpadding="0" cellspacing="0" border="0"${textColW}${textTableSize} style="${textTableStyle}">
-        <tr>
-          <td${NW}${SH?'':` height="${h(30,4)}"`} style="height:${h(30,4)}px; padding:0 0 4px 0; margin:0;${NWS} font-family:${FD}; font-size:21px !important; line-height:26px !important; mso-line-height-rule:exactly; font-weight:bold; color:#1A1A1A; letter-spacing:0.3px;">${txt(name,FD,21,26,' font-weight:bold; letter-spacing:0.3px;')}</td>
-        </tr>
-        <tr>
-          <td${NW}${SH?'':` height="${h(31,10)}"`} style="height:${h(31,10)}px; padding:0 0 10px 0; margin:0;${NWS} font-family:${FB}; font-size:15px !important; line-height:21px !important; mso-line-height-rule:exactly; font-style:italic; color:#1A1A1A;">${txt(title,FB,15,21,' font-style:italic;')}</td>
-        </tr>
-${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:underline;">${phone}</a>`,4)}
-${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`,10)}
-        <tr>
-          <td${SH?'':` height="${LOGO_H}"`} style="height:${LOGO_H}px; padding:0; margin:0; font-size:0; line-height:0; mso-line-height-rule:exactly;">${logoCell}</td>
-        </tr>
+  return `<table role="presentation" width="${outerW}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${outerW}px; table-layout:fixed;">
+  <tr>${photoCells}
+    <td width="${TEXT_W}" valign="top" style="${Z} width:${TEXT_W}px; vertical-align:top;">
+      <table role="presentation" id="sig-text" width="${TEXT_W}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${TEXT_W}px; table-layout:fixed;">
+        ${text(name,T.name,' font-weight:bold;')}
+        ${text(title,T.title,' font-style:italic;')}
+        ${spacer(T.gapA)}
+        ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:none;">${phone}</a>`)}
+        ${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`)}
+        ${spacer(T.gapB)}
+        <tr><td width="${TEXT_W}" height="${LOGO_H}" style="${Z} width:${TEXT_W}px; height:${LOGO_H}px; font-size:1px; line-height:${LOGO_H}px; mso-line-height-rule:exactly;">${logoCell}</td></tr>
       </table>
     </td>
   </tr>
 </table>`;
 }
 
-/* ---------- render: measure the text column, match the photo to it ---------- */
-let pass=0;
+/* ---------- does every line fit its fixed column? ---------- */
+/* The column is fixed, so a long email cannot be allowed to push the block past
+   350px. Measure each line in the same font the clients use and say so. */
+const measureCtx=document.createElement('canvas').getContext('2d');
+function textW(str,size,weight,style){
+  measureCtx.font=`${style||'normal'} ${weight||'normal'} ${size}px Arial, Helvetica, sans-serif`;
+  return Math.ceil(measureCtx.measureText(str).width);
+}
+function overflowList(){
+  const out=[];
+  const chk=(label,v,size,max,w,st)=>{ v=v.trim(); if(!v) return; const px=textW(v,size,w,st); if(px>max) out.push(`<b>${label}</b> is ${px}px, room for ${max}px`); };
+  chk('Name',$('f-name').value,T.name.size,TEXT_W,'bold');
+  chk('Title',$('f-title').value,T.title.size,TEXT_W,'normal','italic');
+  chk('Phone',$('f-phone').value,T.row.size,ROW_TEXT_W);
+  chk('Email',$('f-email').value,T.row.size,ROW_TEXT_W);
+  return out;
+}
+
+/* ---------- render ---------- */
 function render(){
   const photoSrc=$('f-hosted').value.trim()||photoData;
   const stage=$('stage');
@@ -595,35 +563,33 @@ function render(){
     return;
   }
 
-  /* First pass at a nominal size, then measure the real text height and
-     redraw the photo to match it exactly — so both columns finish level
-     even when a long name or address wraps. */
-  stage.innerHTML=buildSig(photoSrc,176);
-  const tt=stage.querySelector('#sig-text');
-  const px=tt?Math.round(tt.getBoundingClientRect().height):176;
-  stage.innerHTML=buildSig(photoSrc,px);
-
-  const html=buildSig(photoSrc,px);
+  const html=buildSig(photoSrc);
+  stage.innerHTML=html;
   lastHtml=html;
-  $('variantTag').textContent = sigVariant==='superhuman' ? 'Superhuman build' : 'Outlook build';
   $('code').textContent=html;
   const c=company();
-  $('dims').textContent = (photoSrc?px+'×'+px+' photo · ':'') + Math.round(LOGO_H*c.aspect)+'×'+LOGO_H+' logo';
+  const realW=Math.round(stage.firstElementChild.getBoundingClientRect().width);
+  $('dims').textContent = realW+'px wide · '+(photoSrc?PHOTO+'×'+PHOTO+' photo · ':'')+c.logoW+'×'+LOGO_H+' logo';
   $('sitenote').innerHTML = c.site
     ? 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.'
     : 'Logo is not linked for this company.';
   $('btn-new').disabled=$('btn-html').disabled=false;
 
+  const over=overflowList();
+  const overNote = over.length
+    ? '<div class="note warn" style="margin-bottom:10px"><span class="ic">!</span><div><b>Too long for the 350px layout.</b> '+over.join('; ')+'. Shorten that line (a nickname, a shorter title), or it will run past the edge on phones.</div></div>'
+    : '';
+
   /* hosted vs embedded */
   const usingData = photoSrc.startsWith('data:');
   const kb=Math.round(html.length/1024);
+  const saveCrop = photoData ? '<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, '+PHOTO_EXPORT+'×'+PHOTO_EXPORT+' (shown at '+PHOTO+'×'+PHOTO+')</div><div class="hint" style="margin:0">Right-click → <b>Save image as…</b> if you need to upload it by hand.</div></div></div>' : '';
   if(usingData){
-    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note warn"><span class="ic">!</span><div><b>Only reliable on Outlook desktop as-is.</b> The photo travels inside the signature (~'+kb+' KB), which needs no hosting for Outlook desktop. But Outlook mobile, Outlook on the web, Gmail, and other webmail can shrink an embedded photo to a tiny thumbnail.<br><br>For something that works everywhere, use <b>Host your photo</b> above — same one-click <b>Crop, upload &amp; use</b> flow as the logo.</div></div></div>';
-    $('imgout').innerHTML='<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Only needed for Gmail or webmail — right-click → <b>Save image as…</b></div></div></div>';
+    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)">'+overNote+'<div class="note warn"><span class="ic">!</span><div><b>Only reliable on Outlook desktop as-is.</b> The photo travels inside the signature (~'+kb+' KB). Outlook mobile, Outlook on the web, Gmail and other webmail can shrink an embedded photo to a thumbnail or drop it. Use <b>Host your photo</b> on the left so it works everywhere.</div></div></div>';
   }else{
-    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)"><div class="note good"><span class="ic">✓</span><div><b>Using a hosted photo.</b> The HTML is '+kb+' KB and will render in every mail client.</div></div></div>';
-    $('imgout').innerHTML = photoData ? '<div class="saveimg"><img src="'+photoData+'" alt="Square crop"><div><div style="font-weight:600;margin-bottom:3px">Your square crop, 404×404</div><div class="hint" style="margin:0">Right-click → <b>Save image as…</b> if you still need to upload it.</div></div></div>' : '';
+    $('sizenote').innerHTML='<div style="padding:14px 16px;border-top:1px solid var(--line)">'+overNote+'<div class="note good"><span class="ic">✓</span><div><b>Using a hosted photo.</b> The HTML is '+kb+' KB and will render in every mail client.</div></div></div>';
   }
+  $('imgout').innerHTML=saveCrop;
 }
 
 /* ---------- copy ---------- */
@@ -655,12 +621,7 @@ async function copyRich(html,label){
     s.removeAllRanges();d.remove();
   }
 }
-function copyAs(variant,label){
-  sigVariant=variant;
-  render();                       /* preview + code pane follow the button */
-  copyRich(lastHtml,label);
-}
-$('btn-new').addEventListener('click',()=>copyAs('newoutlook','Signature copied — paste into Outlook'));
+$('btn-new').addEventListener('click',()=>{ render(); copyRich(lastHtml,'Signature copied — paste it into your signature settings'); });
 $('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
 $('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
 
