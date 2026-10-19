@@ -123,6 +123,11 @@ details.card[open] > summary{border-bottom:1px solid var(--line)}
 ol.steps{margin:0;padding-left:19px;display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink-2)}
 ol.steps b{color:var(--ink);font-weight:600}
 .kbd{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;border-radius:0;padding:5px 12px;font-size:12px;background:transparent;color:var(--ink-2)}
+.seg button + button{border-left:1px solid var(--line-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg button[aria-pressed="true"]:hover{color:var(--on-accent)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .18s}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
@@ -226,6 +231,7 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li><b>Outlook on the web / new Outlook:</b> Settings → Mail → Compose and reply</li>
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
+        <div class="note good"><span class="ic">i</span><div><b>Outlook desktop app.</b> Use the <b>Tables</b> layout. Paste it with <b>Copy signature</b> as usual. If a pasted signature still shifts on Windows, skip the paste: press <b>Download .htm</b>, open <span class="kbd">%APPDATA%\Microsoft\Signatures</span> (paste that into the File Explorer address bar), drop the file in, restart Outlook and pick it under Signatures. Use a hosted photo for this — Outlook does not load embedded photos from a signature file.</div></div>
         <div class="note good"><span class="ic">i</span><div><b>Same proportions, everywhere.</b> The photo is a fixed 174px square, exactly as tall as the text beside it. Every image is exactly 2x its display size, there is no padding, and text is Arial/Helvetica, so it looks the same in Outlook, Gmail, Apple Mail and on phones. “Copy HTML” gives the raw source of the same signature.</div></div>
       </div>
     </section>
@@ -298,13 +304,20 @@ ol.steps b{color:var(--ink);font-weight:600}
     <section class="previewpane">
       <header>
         <h2>Live preview <span style="font-family:var(--body);font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:6px">Arial · 2x images</span></h2>
-        <div class="dims" id="dims">—</div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="seg" role="group" aria-label="HTML layout">
+            <button type="button" id="lay-table" aria-pressed="true">Tables</button>
+            <button type="button" id="lay-div" aria-pressed="false">Divs</button>
+          </div>
+          <div class="dims" id="dims">—</div>
+        </div>
       </header>
       <div class="stage" id="stage"></div>
       <div class="stage-note">Shown on white at true size, the way an email body renders, in the same Arial/Helvetica every mail client uses.</div>
       <div class="actions">
         <button class="primary" id="btn-new">Copy signature</button>
         <button id="btn-html">Copy HTML</button>
+        <button id="btn-htm">Download .htm (Outlook desktop)</button>
         <button id="btn-uri" hidden>Copy photo data URI</button>
       </div>
       <div id="imgout"></div>
@@ -478,13 +491,20 @@ const drop=$('drop');
 drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
 
 /* ---------- build the signature markup ---------- */
-/* One build for every client. Every cell states its width and height both as
-   an attribute (Outlook/Word) and inline CSS (everything else); nothing has
-   padding or margin; vertical rhythm is line-height alone, with
-   mso-line-height-rule:exactly so Word does not round it up. */
+/* One flat table, no nesting. Outlook for Windows and Mac draws signatures with
+   Word, and Word always ends a cell that holds a nested table with an extra
+   empty paragraph. In the old nested build that paragraph inherited the row's
+   28px line-height, so every row grew and the text column ran taller than the
+   photo — the "it all drifts apart in desktop Outlook" bug. Here the photo and
+   the gap are rowspan cells and the icon rows are plain cells of the same
+   table, so Word has nothing to add.
+   Every cell states its width and height both as an attribute (Word) and inline
+   CSS (everything else); nothing has padding or margin; vertical rhythm is
+   line-height alone, with mso-line-height-rule:exactly so Word does not round
+   it up. */
 const Z='padding:0; margin:0; border:0;';
-const TBL='border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; '+Z;
-const spacer=h=>`<tr><td height="${h}" style="${Z} height:${h}px; font-size:1px; line-height:${h}px; mso-line-height-rule:exactly;">&nbsp;</td></tr>`;
+const TD=Z+' mso-padding-alt:0in 0in 0in 0in;';
+const TBL='border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; mso-padding-alt:0in 0in 0in 0in; '+Z;
 
 function buildSig(photoSrc){
   const c=company(), lw=c.logoW;
@@ -495,18 +515,15 @@ function buildSig(photoSrc){
   const email=esc($('f-email').value.trim());
   const tel=telHref($('f-phone').value);
 
+  /* The text column is three cells wide: icon | gap | row text. Full-width
+     lines (name, title, spacers, logo) span all three. */
+  const span=`colspan="3" width="${TEXT_W}"`;
+  const spacer=h=>`<tr><td ${span} height="${h}" style="${TD} width:${TEXT_W}px; height:${h}px; font-size:1px; line-height:${h}px; mso-line-height-rule:exactly;">&nbsp;</td></tr>`;
   const text=(inner,t,extra)=>
-    `<tr><td width="${TEXT_W}" height="${t.lh}" nowrap style="${Z} width:${TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;${extra||''}">${inner}</td></tr>`;
-
+    `<tr><td ${span} height="${t.lh}" nowrap style="${TD} width:${TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;${extra||''}">${inner}</td></tr>`;
   const row=(icon,inner)=>{
     const t=T.row;
-    return `<tr><td width="${TEXT_W}" height="${t.lh}" style="${Z} width:${TEXT_W}px; height:${t.lh}px; font-size:1px; line-height:${t.lh}px; mso-line-height-rule:exactly;">
-          <table role="presentation" width="${TEXT_W}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${TEXT_W}px; table-layout:fixed;"><tr>
-            <td width="${ICON}" height="${t.lh}" valign="middle" style="${Z} width:${ICON}px; height:${t.lh}px; font-size:1px; line-height:${t.lh}px; vertical-align:middle;"><img src="${icon}" width="${ICON}" height="${ICON}" alt="" style="display:block; width:${ICON}px; height:${ICON}px; border:0; outline:none;"></td>
-            <td width="${ICON_GAP}" style="${Z} width:${ICON_GAP}px; font-size:1px; line-height:1px;">&nbsp;</td>
-            <td width="${ROW_TEXT_W}" height="${t.lh}" valign="middle" nowrap style="${Z} width:${ROW_TEXT_W}px; height:${t.lh}px; white-space:nowrap; vertical-align:middle; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;">${inner}</td>
-          </tr></table>
-        </td></tr>`;
+    return `<tr><td width="${ICON}" height="${t.lh}" valign="middle" style="${TD} width:${ICON}px; height:${t.lh}px; font-size:1px; line-height:${t.lh}px; mso-line-height-rule:exactly; vertical-align:middle;"><img src="${icon}" width="${ICON}" height="${ICON}" alt="" style="display:block; width:${ICON}px; height:${ICON}px; border:0; outline:none;"></td><td width="${ICON_GAP}" height="${t.lh}" style="${TD} width:${ICON_GAP}px; height:${t.lh}px; font-size:1px; line-height:${t.lh}px; mso-line-height-rule:exactly;">&nbsp;</td><td width="${ROW_TEXT_W}" height="${t.lh}" valign="middle" nowrap style="${TD} width:${ROW_TEXT_W}px; height:${t.lh}px; white-space:nowrap; vertical-align:middle; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;">${inner}</td></tr>`;
   };
 
   const logoImg=`<img src="${logoUrl(c)}" width="${lw}" height="${LOGO_H}" alt="${esc(c.name)}" style="display:block; width:${lw}px; height:${LOGO_H}px; border:0; outline:none; text-decoration:none;">`;
@@ -514,28 +531,77 @@ function buildSig(photoSrc){
     ? `<a href="${esc(c.site)}" target="_blank" style="text-decoration:none; border:0;">${logoImg}</a>`
     : logoImg;
 
-  const photoCells = photoSrc ? `
-    <td width="${PHOTO}" height="${PHOTO}" valign="top" style="${Z} width:${PHOTO}px; height:${PHOTO}px; font-size:1px; line-height:1px; vertical-align:top;"><img src="${photoSrc}" width="${PHOTO}" height="${PHOTO}" alt="${name}" style="display:block; width:${PHOTO}px; height:${PHOTO}px; border:0; outline:none; text-decoration:none;"></td>
-    <td width="${GAP}" style="${Z} width:${GAP}px; font-size:1px; line-height:1px;">&nbsp;</td>` : '';
+  /* 9 rows on the right: name, gap, title, gap, phone, gap, email, gap, logo. */
+  const ROWS=9;
+  const photoCells = photoSrc
+    ? `<td rowspan="${ROWS}" width="${PHOTO}" height="${PHOTO}" valign="top" style="${TD} width:${PHOTO}px; height:${PHOTO}px; font-size:1px; line-height:1px; vertical-align:top;"><img src="${photoSrc}" width="${PHOTO}" height="${PHOTO}" alt="${name}" style="display:block; width:${PHOTO}px; height:${PHOTO}px; border:0; outline:none; text-decoration:none;"></td><td rowspan="${ROWS}" width="${GAP}" style="${TD} width:${GAP}px; font-size:1px; line-height:1px;">&nbsp;</td>`
+    : '';
   const outerW = photoSrc ? PHOTO+GAP+TEXT_W : TEXT_W;
 
-  return `<table role="presentation" width="${outerW}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${outerW}px; table-layout:fixed;">
-  <tr>${photoCells}
-    <td width="${TEXT_W}" valign="top" style="${Z} width:${TEXT_W}px; vertical-align:top;">
-      <table role="presentation" id="sig-text" width="${TEXT_W}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${TEXT_W}px; table-layout:fixed;">
-        ${text(name,T.name,' font-weight:bold; letter-spacing:0.3px;')}
-        ${spacer(T.gapName)}
-        ${text(title,T.title,' font-style:italic;')}
-        ${spacer(T.gapTitle)}
-        ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:none;">${phone}</a>`)}
-        ${spacer(T.gapRow)}
-        ${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`)}
-        ${spacer(T.gapLogo)}
-        <tr><td width="${TEXT_W}" height="${LOGO_H}" style="${Z} width:${TEXT_W}px; height:${LOGO_H}px; font-size:1px; line-height:${LOGO_H}px; mso-line-height-rule:exactly;">${logoCell}</td></tr>
-      </table>
-    </td>
-  </tr>
+  /* No table-layout:fixed: under it the first row (photo + one colspan cell)
+     would decide the column widths and split the text column into thirds.
+     Auto layout reads every cell's width, and they add up exactly. */
+  /* The name row carries the photo cells, so it is written out here rather
+     than through text(). */
+  const t=T.name;
+  return `<table role="presentation" width="${outerW}" cellpadding="0" cellspacing="0" border="0" style="${TBL} width:${outerW}px;">
+<tr>${photoCells}<td ${span} height="${t.lh}" nowrap style="${TD} width:${TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A; font-weight:bold; letter-spacing:0.3px;">${name}</td></tr>
+${spacer(T.gapName)}
+${text(title,T.title,' font-style:italic;')}
+${spacer(T.gapTitle)}
+${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:none;">${phone}</a>`)}
+${spacer(T.gapRow)}
+${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`)}
+${spacer(T.gapLogo)}
+<tr><td ${span} height="${LOGO_H}" style="${TD} width:${TEXT_W}px; height:${LOGO_H}px; font-size:1px; line-height:${LOGO_H}px; mso-line-height-rule:exactly;">${logoCell}</td></tr>
 </table>`;
+}
+
+/* ---------- the same signature, built from divs instead of tables ----------
+   Same geometry, same sizes, same zero padding: columns are inline-block divs
+   side by side (font-size:0 on the parent kills the gaps between them), rows
+   are fixed-height block divs, spacers are empty divs. Renders identically in
+   Apple Mail, Gmail, Outlook on the web/Mac and phones. Outlook for Windows
+   draws with Word, which ignores inline-block and div widths, so there the
+   columns stack — the table build is the one for Outlook desktop. */
+function buildSigDiv(photoSrc){
+  const c=company(), lw=c.logoW;
+  fitTextW(c);
+  const name=esc($('f-name').value.trim());
+  const title=esc($('f-title').value.trim());
+  const phone=esc($('f-phone').value.trim());
+  const email=esc($('f-email').value.trim());
+  const tel=telHref($('f-phone').value);
+
+  const gap=h=>`<div style="${Z} height:${h}px; font-size:1px; line-height:${h}px; mso-line-height-rule:exactly;">&nbsp;</div>`;
+  const text=(inner,t,extra)=>
+    `<div style="${Z} width:${TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;${extra||''}">${inner}</div>`;
+  const row=(icon,inner)=>{
+    const t=T.row;
+    return `<div style="${Z} width:${TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-size:0; line-height:0;"><img src="${icon}" width="${ICON}" height="${ICON}" alt="" style="display:inline-block; vertical-align:top; width:${ICON}px; height:${ICON}px; border:0; outline:none;"><div style="${Z} display:inline-block; vertical-align:top; width:${ICON_GAP}px; height:${t.lh}px;"></div><div style="${Z} display:inline-block; vertical-align:top; width:${ROW_TEXT_W}px; height:${t.lh}px; white-space:nowrap; font-family:${FONT}; font-size:${t.size}px; line-height:${t.lh}px; mso-line-height-rule:exactly; color:#1A1A1A;">${inner}</div></div>`;
+  };
+
+  const logoImg=`<img src="${logoUrl(c)}" width="${lw}" height="${LOGO_H}" alt="${esc(c.name)}" style="display:block; width:${lw}px; height:${LOGO_H}px; border:0; outline:none; text-decoration:none;">`;
+  const logo = c.site
+    ? `<a href="${esc(c.site)}" target="_blank" style="display:block; width:${lw}px; text-decoration:none; border:0;">${logoImg}</a>`
+    : logoImg;
+
+  const photoCols = photoSrc
+    ? `<div style="${Z} display:inline-block; vertical-align:top; width:${PHOTO}px; height:${PHOTO}px;"><img src="${photoSrc}" width="${PHOTO}" height="${PHOTO}" alt="${name}" style="display:block; width:${PHOTO}px; height:${PHOTO}px; border:0; outline:none; text-decoration:none;"></div><div style="${Z} display:inline-block; vertical-align:top; width:${GAP}px; height:${PHOTO}px;"></div>`
+    : '';
+  const outerW = photoSrc ? PHOTO+GAP+TEXT_W : TEXT_W;
+
+  return `<div style="${Z} width:${outerW}px; white-space:nowrap; font-size:0; line-height:0;">${photoCols}<div id="sig-text" style="${Z} display:inline-block; vertical-align:top; width:${TEXT_W}px; white-space:normal;">
+    ${text(name,T.name,' font-weight:bold; letter-spacing:0.3px;')}
+    ${gap(T.gapName)}
+    ${text(title,T.title,' font-style:italic;')}
+    ${gap(T.gapTitle)}
+    ${row(ICON_PHONE,`<a href="tel:${tel}" style="color:#1A1A1A; text-decoration:none;">${phone}</a>`)}
+    ${gap(T.gapRow)}
+    ${row(ICON_ENVELOPE,`<a href="mailto:${email}" style="color:#1A1A1A; text-decoration:none;">${email}</a>`)}
+    ${gap(T.gapLogo)}
+    <div style="${Z} width:${TEXT_W}px; height:${LOGO_H}px; font-size:1px; line-height:${LOGO_H}px;">${logo}</div>
+  </div></div>`;
 }
 
 /* ---------- size the text column to its longest line ---------- */
@@ -555,6 +621,20 @@ function fitTextW(c){
   ROW_TEXT_W=TEXT_W-rowExtra;
 }
 
+/* ---------- layout: tables (default, safe for Outlook desktop) or divs ---------- */
+const LAYOUT_KEY='thrive-sig-layout';
+let LAYOUT='table';
+try{ if(localStorage.getItem(LAYOUT_KEY)==='div') LAYOUT='div'; }catch(e){}
+function setLayout(l){
+  LAYOUT=l;
+  $('lay-table').setAttribute('aria-pressed',String(l==='table'));
+  $('lay-div').setAttribute('aria-pressed',String(l==='div'));
+  try{ localStorage.setItem(LAYOUT_KEY,l); }catch(e){}
+  render();
+}
+$('lay-table').addEventListener('click',()=>setLayout('table'));
+$('lay-div').addEventListener('click',()=>setLayout('div'));
+
 /* ---------- render ---------- */
 function render(){
   const photoSrc=$('f-hosted').value.trim()||photoData;
@@ -563,12 +643,12 @@ function render(){
   if(!photoSrc && !$('f-name').value.trim()){
     stage.innerHTML='<div class="empty">Add a photo and a name to see the signature.</div>';
     $('code').textContent='—'; $('dims').textContent='—';
-    $('btn-new').disabled=$('btn-html').disabled=true;
+    $('btn-new').disabled=$('btn-html').disabled=$('btn-htm').disabled=true;
     $('imgout').innerHTML=''; $('sizenote').innerHTML='';
     return;
   }
 
-  const html=buildSig(photoSrc);
+  const html=LAYOUT==='div'?buildSigDiv(photoSrc):buildSig(photoSrc);
   stage.innerHTML=html;
   lastHtml=html;
   $('code').textContent=html;
@@ -578,9 +658,11 @@ function render(){
   $('sitenote').innerHTML = c.site
     ? 'Logo links to <b>'+esc(c.site.replace(/^https:\/\//,''))+'</b> — set per company, not typed in.'
     : 'Logo is not linked for this company.';
-  $('btn-new').disabled=$('btn-html').disabled=false;
+  $('btn-new').disabled=$('btn-html').disabled=$('btn-htm').disabled=false;
 
-  const overNote='';
+  const overNote = LAYOUT==='div'
+    ? '<div class="note warn" style="margin-bottom:10px"><span class="ic">!</span><div><b>Div layout.</b> Same look in Apple Mail, Gmail, Outlook on the web/Mac and phones. Outlook for Windows ignores div widths and stacks the columns, so use <b>Tables</b> for anyone on Outlook desktop.</div></div>'
+    : '';
 
   /* hosted vs embedded */
   const usingData = photoSrc.startsWith('data:');
@@ -604,11 +686,45 @@ async function copyPlain(text,msg){
     ta.remove();
   }
 }
-async function copyRich(html,label){
+/* Desktop Outlook (Windows and Mac) pastes through Word. Wrapping the
+   signature as an Office HTML document tells Word to read pixels at 96 per
+   inch (no DPI rescaling of the images on a 125%/150% screen) and to give
+   its Normal paragraphs no spacing. */
+function officeDoc(body,title){
+  return '<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+    +'<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
+    +(title?'<title>'+esc(title)+'</title>':'')
+    +'<!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->'
+    +'<style>p.MsoNormal,li.MsoNormal,div.MsoNormal{margin:0;mso-para-margin:0;}table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}img{-ms-interpolation-mode:bicubic;}</style>'
+    +'</head><body style="margin:0;padding:0;">'+body+'</body></html>';
+}
+function plainSig(){
+  return ['f-name','f-title','f-phone','f-email'].map(id=>$(id).value.trim()).filter(Boolean)
+    .concat(company().name).join('\n');
+}
+function copyRich(html,label){
+  /* Primary path: hand the clipboard our exact markup from a copy event. The
+     async Clipboard API re-serializes text/html in Chrome (it drops the Office
+     head and comments), and copying a rendered selection drags in computed
+     styles from this page. setData inside the copy event is passed through
+     untouched. */
+  let done=false;
+  const onCopy=e=>{
+    e.clipboardData.setData('text/html',officeDoc(html));
+    e.clipboardData.setData('text/plain',plainSig());
+    e.preventDefault(); done=true;
+  };
+  document.addEventListener('copy',onCopy);
+  try{ document.execCommand('copy'); }catch(_){}
+  document.removeEventListener('copy',onCopy);
+  if(done){ toast(label||'Signature copied'); return; }
+  copyRichAsync(html,label);
+}
+async function copyRichAsync(html,label){
   try{
     await navigator.clipboard.write([new ClipboardItem({
       'text/html':new Blob([html],{type:'text/html'}),
-      'text/plain':new Blob([html],{type:'text/plain'})
+      'text/plain':new Blob([plainSig()],{type:'text/plain'})
     })]);
     toast(label||'Signature copied');
   }catch(e){
@@ -625,6 +741,19 @@ async function copyRich(html,label){
 }
 $('btn-new').addEventListener('click',()=>{ render(); copyRich(lastHtml,'Signature copied — paste it into your signature settings'); });
 $('btn-html').addEventListener('click',()=>copyPlain(lastHtml,'HTML copied'));
+/* A signature file for classic Outlook on Windows: dropped into the Signatures
+   folder, Outlook reads it as-is, with no clipboard and no paste conversion. */
+$('btn-htm').addEventListener('click',()=>{
+  render();
+  const nm=$('f-name').value.trim()||'Signature';
+  const file=(slugify(nm)||'signature')+'-'+company().slug+'.htm';
+  const blob=new Blob([officeDoc(lastHtml,nm+' — '+company().name)],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=file;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('Saved '+file+' — see step 4 for where it goes');
+});
 $('btn-uri').addEventListener('click',()=>copyPlain(photoData,'Photo data URI copied'));
 
 const PEOPLE_BASE='https://thriveassetmx.github.io/thrive-email-signatures/people/';
@@ -850,6 +979,7 @@ function initFromLink(){
   if(applyPrefill()) $('prefill-banner').hidden=false;
   suggestUrl(); syncFilename(); refreshLink(); render();
 }
+setLayout(LAYOUT);
 initFromLink();
 window.addEventListener('pageshow',initFromLink);
 window.addEventListener('hashchange',initFromLink);
