@@ -233,7 +233,7 @@ ol.steps b{color:var(--ink);font-weight:600}
           <li>Create a signature, click into the edit box, and press <span class="kbd">Ctrl/Cmd + V</span> after using <b>Copy signature</b>.</li>
         </ol>
         <div class="note good"><span class="ic">i</span><div><b>Outlook desktop app.</b> Paste it with <b>Copy signature</b> as usual. If a pasted signature still shifts on Windows, skip the paste: press <b>Download .htm</b>, open <span class="kbd">%APPDATA%\Microsoft\Signatures</span> (paste that into the File Explorer address bar), drop the file in, restart Outlook and pick it under Signatures. Use a hosted photo for this — Outlook does not load embedded photos from a signature file.</div></div>
-        <div class="note good"><span class="ic">i</span><div><b>Same proportions, everywhere.</b> The photo is a fixed 86px square with the company logo under it at the same 86px width, together exactly as tall as the text, then a thin divider and the contact details. Every image is exactly 2x its display size, there is no padding, and text is Arial/Helvetica, so it looks the same in Outlook, Gmail, Apple Mail and on phones. “Copy HTML” gives the raw source of the same signature.</div></div>
+        <div class="note good"><span class="ic">i</span><div><b>Same proportions, everywhere.</b> The photo is a fixed 100px square with the company logo under it at the same 100px width, then a thin divider and the contact details. Every image is exactly 2x its display size, there is no padding, and text is Arial/Helvetica, so it looks the same in Outlook, Gmail, Apple Mail and on phones. “Copy HTML” gives the raw source of the same signature.</div></div>
       </div>
     </section>
 
@@ -360,7 +360,7 @@ const COMPANIES=[
   {id:'ventures',         name:'Thrive Ventures',         slug:'ventures',      logoW:129, site:''}
 ];
 /* Every image is exported at exactly 2x its display size (logos 90px tall for
-   45px, icons 56px for 28px, photos 172px for 86px), so a client that drops
+   45px, icons 56px for 28px, photos 200px for 100px), so a client that drops
    width/height attributes still shows it at a sane size, never a 5000px master.
    See thrive-brain Decisions/2026-09-18 - Fix Superhuman Signature Drift.
    The older logo-<id>.png (135px) files stay in assets/ for signatures already
@@ -374,12 +374,12 @@ const logoUrl=c=>ASSET_BASE+'logo-'+c.id+'-90.png';
    Text sizes are the original builder's (name 21px, title 15px, rows 16px,
    28px icons). The text column is at least 280px and grows to fit the longest
    line, so nothing ever wraps. */
-const PHOTO=86, PHOTO_LOGO_GAP=5, LOGO_ROW=30, LINE_W=1, LINE_COLOR='#D9D9D9';
+const PHOTO=100, PHOTO_LOGO_GAP=5, LOGO_ROW=35, LINE_W=1, LINE_COLOR='#D9D9D9';
 const ICON=28, ICON_GAP=14, LOGO_H=45, MIN_TEXT_W=280;
-/* Left column: photo 86 + 5 + logo row 30 = 121, the same height as the text
-   block on the right (Tatiana, 2026-10-20). The logo is 86 wide; its height
-   follows its own proportions (26–30px) and it sits centred in the 30px row,
-   so every company's signature is exactly the same height. */
+/* Left column: photo 100 + 5 + logo row 35 = 140 (Tatiana, 2026-10-20: 100px
+   photo, logo 100 wide). The text block (121) is centred against it. The
+   logo's height follows its own proportions (30–35px) and it sits centred in
+   the 35px row, so every company's signature is exactly the same height. */
 const LEFT_H=PHOTO+PHOTO_LOGO_GAP+LOGO_ROW;
 const logoH=c=>Math.round(PHOTO*LOGO_H/c.logoW);
 const PHOTO_EXPORT=PHOTO*2;
@@ -391,7 +391,7 @@ let TEXT_W=MIN_TEXT_W, ROW_TEXT_W=MIN_TEXT_W-ICON-ICON_GAP;
    client draws: Arial on Windows/Android, Helvetica on Apple. */
 const FONT='Arial, Helvetica, sans-serif';
 /* Spacing is line-height only, no padding anywhere. Text block height:
-   name 26 + 4 + title 21 + 10 + phone 28 + 4 + email 28 = 121 = left column. */
+   name 26 + 4 + title 21 + 10 + phone 28 + 4 + email 28 = 121, centred in 140. */
 const T={ name:{size:21,lh:26}, title:{size:15,lh:21}, row:{size:16,lh:28},
           gapName:4, gapTitle:10, gapRow:4 };
 
